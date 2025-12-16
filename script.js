@@ -1071,22 +1071,22 @@ async function handleTranslate() {
         // 首先尝试使用DeepSeek API
         try {
             translationResult = await translateWithDeepSeek(sourceText, sourceLang, targetLang);
-            
-            // 显示翻译结果
-            resultDiv.innerHTML = `<div class="translation-text">${translationResult}</div>`;
-            
+
+            // 显示翻译结果 (使用 escapeHtml 防止 XSS 攻击)
+            resultDiv.innerHTML = `<div class="translation-text">${escapeHtml(translationResult)}</div>`;
+
             // 如果是从缓存获取的，显示提示
             if (isFromCache) {
                 showMessage('使用缓存结果，响应更快！', 'success');
             }
-            
+
         } catch (apiError) {
             console.log('API翻译失败，使用内置翻译:', apiError.message);
-            
+
             // API失败时使用内置翻译
             translationResult = translateWithBuiltIn(sourceText, sourceLang, targetLang);
-            
-            resultDiv.innerHTML = `<div class="translation-text">${translationResult}</div>`;
+
+            resultDiv.innerHTML = `<div class="translation-text">${escapeHtml(translationResult)}</div>`;
             showMessage('API暂时不可用，使用内置翻译', 'warning');
         }
         
