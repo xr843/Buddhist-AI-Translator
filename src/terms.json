@@ -1,0 +1,69 @@
+{
+    "心经": {
+        "般若波罗蜜多心经": "The Heart of the Perfection of Wisdom Sutra / प्रज्ञापारमिताहृदयसूत्र",
+        "观自在菩萨": "Avalokiteshvara Bodhisattva / अवलोकितेश्वर बोधिसत्त्व",
+        "行深般若波罗蜜多时": "When practicing the deep Perfection of Wisdom / गम्भीर प्रज्ञापारमिता अभ्यास करते समय",
+        "照见五蕴皆空": "perceived that all five aggregates are empty / पञ्चस्कन्धों की शून्यता को देखा",
+        "度一切苦厄": "transcended all suffering and distress / सभी दुःख और संकट से मुक्त हो गए",
+        "舍利子": "Shariputra / शारिपुत्र",
+        "色不异空": "form is not different from emptiness / रूप शून्यता से भिन्न नहीं",
+        "空不异色": "emptiness is not different from form / शून्यता रूप से भिन्न नहीं",
+        "色即是空": "form is emptiness / रूप ही शून्यता है",
+        "空即是色": "emptiness is form / शून्यता ही रूप है",
+        "受想行识": "sensation, perception, mental formations, and consciousness / वेदना, संज्ञा, संस्कार, और विज्ञान",
+        "亦复如是": "are also like this / भी इसी प्रकार हैं"
+    },
+    "基础概念": {
+        "佛": "Buddha / बुद्ध",
+        "法": "Dharma / धर्म",
+        "僧": "Sangha / संघ",
+        "三宝": "Three Jewels (Buddha, Dharma, Sangha) / त्रिरत्न",
+        "四谛": "Four Noble Truths / चत्वारि आर्यसत्यानि",
+        "八正道": "Noble Eightfold Path / आर्याष्टाङ्गिकमार्ग",
+        "苦": "suffering / दुःख",
+        "集": "origin of suffering / समुदय",
+        "灭": "cessation of suffering / निरोध",
+        "道": "path to cessation / मार्ग",
+        "无常": "impermanence / अनित्य",
+        "无我": "non-self / अनात्मन्",
+        "涅槃": "Nirvana / निर्वाण",
+        "轮回": "samsara / संसार",
+        "业": "karma / कर्म",
+        "菩萨": "Bodhisattva / बोधिसत्त्व",
+        "阿罗汉": "Arhat / अर्हत्",
+        "如来": "Tathagata / तथागत",
+        "慈悲": "compassion / करुणा",
+        "智慧": "wisdom / प्रज्ञा",
+        "禅定": "meditation / ध्यान",
+        "戒律": "precepts / शील"
+    },
+    "唯识学派": {
+        "阿赖耶识": "Alaya-vijnana (store consciousness) / आलयविज्ञान",
+        "八识": "Eight Consciousnesses / अष्टविज्ञान",
+        "转识成智": "transformation of consciousness into wisdom / विज्ञानपरिवृत्तिज्ञान",
+        "三性": "Three Natures / त्रिस्वभाव",
+        "遍计所执性": "parikalpita (imagined nature) / परिकल्पितस्वभाव",
+        "依他起性": "paratantra (dependent nature) / परतन्त्रस्वभाव",
+        "圆成实性": "parinispanna (perfected nature) / परिनिष्पन्नस्वभाव"
+    },
+    "中观学派": {
+        "中道": "Middle Way / मध्यमप्रतिपद्",
+        "空性": "emptiness / शून्यता",
+        "缘起": "dependent origination / प्रतीत्यसमुत्पाद",
+        "二谛": "Two Truths / द्वयसत्य",
+        "世俗谛": "conventional truth / संवृतिसत्य",
+        "胜义谛": "ultimate truth / परमार्थसत्य"
+    },
+    "净土宗": {
+        "阿弥陀佛": "Amitabha Buddha / अमिताभ बुद्ध",
+        "极乐世界": "Pure Land / सुखावती",
+        "念佛": "Buddha recitation / बुद्धानुस्मृति",
+        "往生": "rebirth in Pure Land / उत्पत्ति"
+    },
+    "禅宗": {
+        "顿悟": "sudden enlightenment / सहसाबोधि",
+        "明心见性": "seeing one's true nature / स्वभावदर्शन",
+        "不立文字": "not established in words and letters / अक्षरानवस्थापन",
+        "直指人心": "directly pointing to the human mind / प्रत्यक्षचित्तनिर्देश"
+    }
+}
