@@ -153,6 +153,8 @@ function clearInput() {
 function copyResult() {
     navigator.clipboard.writeText(resultDiv.textContent).then(() => {
         showMessage('复制成功', 'success');
+    }).catch(() => {
+        showMessage('复制失败，请检查剪贴板权限', 'error');
     });
 }
 
@@ -160,6 +162,8 @@ function pasteText() {
     navigator.clipboard.readText().then(text => {
         sourceTextArea.value = text;
         updateCharCount();
+    }).catch(() => {
+        showMessage('无法读取剪贴板，请检查浏览器权限', 'error');
     });
 }
 
