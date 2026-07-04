@@ -1,3 +1,6 @@
+// Legacy bundled script kept for historical reference.
+// The active app uses ES modules under src/.
+
 // API设置
 const API_CONFIG = {
     provider: 'deepseek',

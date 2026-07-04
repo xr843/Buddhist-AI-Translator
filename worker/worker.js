@@ -19,7 +19,9 @@
 const ALLOWED_ORIGINS = [
     'https://xr843.github.io',
     'http://localhost',
-    'http://127.0.0.1'
+    'http://localhost:8000',
+    'http://127.0.0.1',
+    'http://127.0.0.1:8000'
 ];
 
 // 速率限制配置（基于 IP，每分钟最大请求数）
@@ -81,16 +83,18 @@ async function handleTranslate(request, env, origin) {
         return jsonResponse({ error: '请求体格式错误' }, origin, 400);
     }
 
-    const { text, prompt } = body;
+    const { text, sourceLang, targetLang } = body;
 
-    if (!text || !prompt) {
-        return jsonResponse({ error: '缺少必要参数: text, prompt' }, origin, 400);
+    if (typeof text !== 'string' || text.trim().length === 0) {
+        return jsonResponse({ error: '缺少必要参数: text' }, origin, 400);
     }
 
     // 输入长度限制
     if (text.length > 5000) {
         return jsonResponse({ error: '文本长度超过限制 (5000字符)' }, origin, 400);
     }
+
+    const prompt = createTranslationPrompt(text, sourceLang, targetLang);
 
     try {
         const deepseekResponse = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -142,7 +146,36 @@ async function handleTranslate(request, env, origin) {
 // --- 工具函数 ---
 
 function isAllowedOrigin(origin) {
-    return ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed));
+    let parsedOrigin;
+    try {
+        parsedOrigin = new URL(origin).origin;
+    } catch {
+        return false;
+    }
+
+    return ALLOWED_ORIGINS.some(allowed => parsedOrigin === new URL(allowed).origin);
+}
+
+function createTranslationPrompt(text, sourceLang, targetLang) {
+    const source = normalizeLanguage(sourceLang, '自动识别');
+    const target = normalizeLanguage(targetLang, '现代中文');
+
+    return [
+        '请以佛教文献翻译专家的身份完成翻译。',
+        `源语言: ${source}`,
+        `目标语言: ${target}`,
+        '要求:',
+        '1. 准确保留佛教术语和专有名词。',
+        '2. 译文应简洁、自然，并忠实于原文。',
+        '3. 只返回译文，不要添加解释、标题或额外说明。',
+        '',
+        '原文:',
+        text
+    ].join('\n');
+}
+
+function normalizeLanguage(language, fallback) {
+    return typeof language === 'string' && language.trim() ? language.trim() : fallback;
 }
 
 function handleCORS(request) {

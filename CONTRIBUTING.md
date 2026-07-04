@@ -26,17 +26,21 @@ cd Buddhist-AI-Translator
 # 2. 创建功能分支
 git checkout -b feature/your-feature-name
 
-# 3. 进行开发
-# 修改代码...
+# 3. 启动本地静态服务器
+python3 -m http.server 8000
+# 访问 http://127.0.0.1:8000/
 
-# 4. 提交更改
+# 4. 运行检查
+npm run verify
+
+# 5. 提交更改
 git add .
 git commit -m "feat: 添加新功能描述"
 
-# 5. 推送到您的分支
+# 6. 推送到您的分支
 git push origin feature/your-feature-name
 
-# 6. 创建 Pull Request
+# 7. 创建 Pull Request
 ```
 
 #### 代码规范
@@ -55,12 +59,14 @@ git push origin feature/your-feature-name
 我们特别欢迎佛教术语和翻译的贡献：
 
 #### 术语格式
-```javascript
-// 在 script.js 的 BUDDHIST_TERMS 对象中添加
-"梵文术语": {
-    "zh": "中文翻译",
-    "en": "English translation",
-    "tibetan": "藏文翻译（如有）"
+术语位于 `src/terms.json`。新增或修改术语时保持 JSON 格式有效：
+
+```json
+{
+  "基础概念": {
+    "无常": "impermanence / अनित्य",
+    "无我": "non-self / अनात्मन्"
+  }
 }
 ```
 
@@ -91,6 +97,7 @@ git push origin feature/your-feature-name
 ### 提交前检查清单
 - [ ] 代码遵循项目的编码规范
 - [ ] 已测试新功能或修复的bug
+- [ ] 已运行 `npm run verify`
 - [ ] 更新了相关文档
 - [ ] 提交信息清晰明了
 - [ ] 没有引入新的console.log或调试代码
@@ -147,4 +154,4 @@ git push origin feature/your-feature-name
 
 ---
 
-**愿以此功德，回向法界。愿正法久住，利乐有情。** 🙏 
+**愿以此功德，回向法界。愿正法久住，利乐有情。** 🙏

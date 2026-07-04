@@ -18,6 +18,30 @@ export async function loadTerms() {
     }
 }
 
+export function findMatchingTerms(text) {
+    if (!text) {
+        return [];
+    }
+
+    const candidates = Object.entries(buddhistTerms)
+        .map(([term, translation]) => ({
+            term,
+            translation,
+            index: text.indexOf(term)
+        }))
+        .filter((candidate) => candidate.index !== -1);
+
+    return candidates
+        .filter((candidate) => !candidates.some((other) => (
+            other.term !== candidate.term
+            && other.term.length > candidate.term.length
+            && candidate.index >= other.index
+            && candidate.index + candidate.term.length <= other.index + other.term.length
+        )))
+        .sort((a, b) => a.index - b.index || b.term.length - a.term.length)
+        .map(({ term, translation }) => ({ term, translation }));
+}
+
 // 缓存相关
 function getCacheKey(text, sourceLang, targetLang) {
     return `${sourceLang}->${targetLang}:${text.trim()}`;
@@ -31,7 +55,7 @@ function cleanCache() {
 }
 
 // 构建翻译 prompt
-function createTranslationPrompt(text, sourceLang, targetLang) {
+export function createTranslationPrompt(text, sourceLang, targetLang) {
     const langMap = {
         'auto': '自动检测', 'zh': '中文', 'zh-classical': '文言文', 'en': '英文',
         'sa': '梵文', 'sa-hk': '梵文转写', 'bo': '藏文', 'pi': '巴利文',
@@ -45,6 +69,13 @@ function createTranslationPrompt(text, sourceLang, targetLang) {
 
     let prompt = `将${sourceDesc}翻译为${targetDesc}：\n\n${text}\n\n`;
 
+    const matchedTerms = findMatchingTerms(text);
+    if (matchedTerms.length > 0) {
+        prompt += '参考术语（仅匹配本文）：\n';
+        prompt += matchedTerms.map(({ term, translation }) => `- ${term}: ${translation}`).join('\n');
+        prompt += '\n\n';
+    }
+
     if (targetLang === 'zh') {
         prompt += '要求：准确翻译佛教术语，使用现代中文。';
     } else if (targetLang === 'zh-classical') {
@@ -55,6 +86,10 @@ function createTranslationPrompt(text, sourceLang, targetLang) {
 
     prompt += '\n\n直接返回翻译结果，无需引号或解释。';
     return prompt;
+}
+
+export function buildProxyPayload(text, sourceLang, targetLang) {
+    return { text, sourceLang, targetLang };
 }
 
 // DeepSeek API 翻译（支持直连和代理模式）
@@ -83,12 +118,7 @@ export async function translateWithDeepSeek(text, sourceLang, targetLang) {
             response = await fetch(`${API_CONFIG.proxyURL}/translate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    text,
-                    sourceLang,
-                    targetLang,
-                    prompt
-                }),
+                body: JSON.stringify(buildProxyPayload(text, sourceLang, targetLang)),
                 signal: controller.signal
             });
         } else {
@@ -153,14 +183,21 @@ export async function translateWithDeepSeek(text, sourceLang, targetLang) {
 // 内置降级翻译
 export function translateWithBuiltIn(text, sourceLang, targetLang) {
     // 检查佛教术语
-    for (const [term, translation] of Object.entries(buddhistTerms)) {
-        if (text.includes(term)) {
+    const matchedTerms = findMatchingTerms(text);
+    if (matchedTerms.length > 0) {
+        if (matchedTerms.length === 1 && text.trim() === matchedTerms[0].term) {
             if (targetLang === 'en') {
-                return removeQuotes(translation.split(' / ')[1] || translation);
+                return removeQuotes(matchedTerms[0].translation.split(' / ')[0] || matchedTerms[0].translation);
             } else if (targetLang === 'sa') {
-                return removeQuotes(translation.split(' / ')[2] || translation);
+                return removeQuotes(matchedTerms[0].translation.split(' / ')[1] || matchedTerms[0].translation);
             }
         }
+
+        const glossary = matchedTerms.map(({ term, translation }) => `- ${term}: ${translation}`).join('\n');
+        if (targetLang === 'zh') {
+            return `术语参考：\n${glossary}\n\n内置模式仅提供术语参考；建议使用AI翻译获得完整段落译文。`;
+        }
+        return `Glossary guidance:\n${glossary}\n\nBuilt-in mode provides glossary guidance only; please use AI translation for a full passage translation.`;
     }
 
     if (sourceLang === 'zh-classical' && targetLang === 'zh') {
