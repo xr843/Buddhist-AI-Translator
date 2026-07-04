@@ -31,7 +31,7 @@
 | **18 种语言** | 梵文、巴利文、藏文、文言文、现代中文、英文等 |
 | **50+ 术语库** | 内置专业佛教术语数据库，确保翻译准确性 |
 | **语音功能** | 语音输入 + 多语言朗读，支持分段高亮 |
-| **零依赖** | 纯前端实现，无需后端，直接浏览器运行 |
+| **静态部署** | 纯前端 ES 模块，可用任意静态服务器运行 |
 
 ### 支持语言
 
@@ -46,13 +46,14 @@
 ```bash
 git clone https://github.com/xr843/Buddhist-AI-Translator.git
 cd Buddhist-AI-Translator
-# 直接在浏览器中打开 index.html
+python3 -m http.server 8000
+# 访问 http://127.0.0.1:8000/
 ```
 
 **配置 API**:
-1. 访问 [DeepSeek 开放平台](https://platform.deepseek.com) 获取 API 密钥
-2. 点击界面右上角设置按钮
-3. 输入 API 密钥并保存
+1. BYOK 模式: 访问 [DeepSeek 开放平台](https://platform.deepseek.com) 获取 API 密钥，在浏览器中本地保存
+2. Worker 代理模式: 部署 `worker/`，在 `src/config.js` 配置 `proxyURL`
+3. 公共部署建议使用 Worker 代理，避免在浏览器暴露共享密钥
 
 ### 键盘快捷键
 
@@ -100,7 +101,7 @@ Buddhist AI Translator is a specialized AI-powered translation platform designed
 | **18 Languages** | Sanskrit, Pali, Tibetan, Classical Chinese, Modern Chinese, English, etc. |
 | **50+ Terms** | Built-in professional Buddhist terminology database |
 | **Voice Support** | Speech input + multi-language text-to-speech with segment highlighting |
-| **Zero Dependencies** | Pure frontend, no backend required, runs directly in browser |
+| **Static Deployment** | Frontend ES modules that run from any static server |
 
 ### Supported Languages
 
@@ -115,13 +116,14 @@ Buddhist AI Translator is a specialized AI-powered translation platform designed
 ```bash
 git clone https://github.com/xr843/Buddhist-AI-Translator.git
 cd Buddhist-AI-Translator
-# Open index.html in your browser
+python3 -m http.server 8000
+# Visit http://127.0.0.1:8000/
 ```
 
 **API Configuration**:
-1. Get API key from [DeepSeek Platform](https://platform.deepseek.com)
-2. Click settings button in the top-right corner
-3. Enter and save your API key
+1. BYOK mode: get an API key from [DeepSeek Platform](https://platform.deepseek.com) and save it locally in the browser
+2. Worker proxy mode: deploy `worker/` and set `proxyURL` in `src/config.js`
+3. Use the Worker proxy for public deployments so shared keys stay server-side
 
 ### Keyboard Shortcuts
 
@@ -140,7 +142,10 @@ cd Buddhist-AI-Translator
 Buddhist-AI-Translator/
 ├── index.html          # Main page
 ├── styles.css          # Stylesheet
-├── script.js           # Core logic & AI integration
+├── src/                # ES modules, translator logic, config, terms
+├── worker/             # Optional Cloudflare Worker proxy
+├── tests/              # Node source and unit tests
+├── script.js           # Legacy bundled script kept for reference
 ├── README.md           # Documentation
 ├── CONTRIBUTING.md     # Contribution guidelines
 ├── LICENSE             # MIT License

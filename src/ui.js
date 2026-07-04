@@ -34,6 +34,7 @@ function bindEvents() {
     sourceTextArea.addEventListener('input', updateCharCount);
     sourceSelect.addEventListener('change', updateLanguageLabels);
     targetSelect.addEventListener('change', updateLanguageLabels);
+    document.addEventListener('keydown', handleKeyboardShortcuts);
 
     document.getElementById('clear-input').addEventListener('click', clearInput);
     document.getElementById('copy-btn').addEventListener('click', copyResult);
@@ -50,6 +51,29 @@ function bindEvents() {
     document.getElementById('api-modal-overlay').addEventListener('click', function (e) {
         if (e.target === this) hideApiSettings();
     });
+}
+
+function handleKeyboardShortcuts(event) {
+    if (!event.ctrlKey) return;
+
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        handleTranslate();
+        return;
+    }
+
+    if (!event.shiftKey) return;
+
+    if (event.key.toLowerCase() === 'c') {
+        event.preventDefault();
+        copyResult();
+    } else if (event.key.toLowerCase() === 'v') {
+        event.preventDefault();
+        pasteText();
+    } else if (event.key.toLowerCase() === 'x') {
+        event.preventDefault();
+        clearInput();
+    }
 }
 
 // --- 翻译 ---
