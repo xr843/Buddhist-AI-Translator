@@ -18,6 +18,17 @@ export const API_CONFIG = {
 
 export { languageMap } from './languages.js';
 
+export function storeApiKey(apiKey) {
+    API_CONFIG.apiKey = apiKey;
+
+    try {
+        localStorage.setItem('deepseek_api_key', apiKey);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
 // 翻译缓存
 export const translationCache = new Map();
 export const MAX_CACHE_SIZE = 100;
