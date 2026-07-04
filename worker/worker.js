@@ -41,7 +41,10 @@ export default {
         if (!isAllowedOrigin(origin)) {
             return new Response(JSON.stringify({ error: '未授权的来源' }), {
                 status: 403,
-                headers: { 'Content-Type': 'application/json' }
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Vary': 'Origin'
+                }
             });
         }
 
@@ -205,7 +208,8 @@ function handleCORS(request) {
         'Access-Control-Allow-Origin': isAllowedOrigin(origin) ? origin : '',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Max-Age': '86400'
+        'Access-Control-Max-Age': '86400',
+        'Vary': 'Origin'
     };
     return new Response(null, { status: 204, headers });
 }
@@ -217,7 +221,8 @@ function jsonResponse(data, origin, status = 200) {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': isAllowedOrigin(origin) ? origin : '',
             'Access-Control-Allow-Methods': 'POST, OPTIONS',
-            'X-Content-Type-Options': 'nosniff'
+            'X-Content-Type-Options': 'nosniff',
+            'Vary': 'Origin'
         }
     });
 }
