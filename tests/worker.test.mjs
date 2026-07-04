@@ -38,14 +38,17 @@ test('exact origin allow-listing accepts the GitHub Pages origin and rejects spo
     const allowedResponse = await worker.fetch(request('/health'), {});
     assert.equal(allowedResponse.status, 200);
     assert.equal(allowedResponse.headers.get('Access-Control-Allow-Origin'), ALLOWED_ORIGIN);
+    assert.equal(allowedResponse.headers.get('Vary'), 'Origin');
 
     const localResponse = await worker.fetch(request('/health', { origin: LOCAL_ORIGIN }), {});
     assert.equal(localResponse.status, 200);
     assert.equal(localResponse.headers.get('Access-Control-Allow-Origin'), LOCAL_ORIGIN);
+    assert.equal(localResponse.headers.get('Vary'), 'Origin');
 
     const spoofedResponse = await worker.fetch(request('/health', { origin: SPOOFED_ORIGIN }), {});
     assert.equal(spoofedResponse.status, 403);
     assert.equal(spoofedResponse.headers.get('Access-Control-Allow-Origin'), null);
+    assert.equal(spoofedResponse.headers.get('Vary'), 'Origin');
 });
 
 test('OPTIONS preflight returns CORS headers for an allowed origin', async () => {
@@ -56,6 +59,7 @@ test('OPTIONS preflight returns CORS headers for an allowed origin', async () =>
     assert.equal(response.headers.get('Access-Control-Allow-Methods'), 'POST, OPTIONS');
     assert.equal(response.headers.get('Access-Control-Allow-Headers'), 'Content-Type');
     assert.equal(response.headers.get('Access-Control-Max-Age'), '86400');
+    assert.equal(response.headers.get('Vary'), 'Origin');
 });
 
 test('missing DEEPSEEK_API_KEY returns 500 JSON without calling fetch', async (t) => {
