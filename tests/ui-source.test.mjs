@@ -39,6 +39,14 @@ test('src/ui.js registers documented Ctrl keyboard shortcuts', async () => {
     assert.match(normalized, /(?:event|e)\.key\.toLowerCase\(\)===['"]x['"][^}]+clearInput\(\)/);
 });
 
+test('src/ui.js delegates API key persistence to config helpers', async () => {
+    const source = await readSource('src/ui.js');
+
+    assert.match(source, /import\s*{[^}]*storeApiKey[^}]*}\s*from\s*['"]\.\/config\.js['"]/s);
+    assert.match(source, /storeApiKey\(apiKey\)/);
+    assert.doesNotMatch(source, /localStorage\.setItem\(['"]deepseek_api_key['"]/);
+});
+
 test('styles.css keeps the fixed footer from covering translator content', async () => {
     const source = await readSource('styles.css');
 

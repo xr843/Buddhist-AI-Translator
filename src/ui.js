@@ -1,4 +1,4 @@
-import { API_CONFIG, languageMap } from './config.js';
+import { API_CONFIG, languageMap, storeApiKey } from './config.js';
 import { escapeHtml, validateInput, showMessage } from './utils.js';
 import { translateWithDeepSeek, translateWithBuiltIn, hasCachedTranslation } from './translator.js';
 import { initSpeech, startVoiceInput, speakResult, stopSpeaking, isSpeaking } from './speech.js';
@@ -241,16 +241,17 @@ function saveApiKey() {
         return;
     }
 
-    localStorage.setItem('deepseek_api_key', apiKey);
-    API_CONFIG.apiKey = apiKey;
+    const persisted = storeApiKey(apiKey);
 
     statusDiv.className = 'api-status success';
-    statusDiv.textContent = 'API密钥保存成功！';
+    statusDiv.textContent = persisted
+        ? 'API密钥保存成功！'
+        : 'API密钥已在当前会话生效，但无法保存到本地存储。';
 
     setTimeout(() => {
         hideApiSettings();
         checkApiKeyStatus();
-        showMessage('API配置已更新', 'success');
+        showMessage(persisted ? 'API配置已更新' : 'API配置已在当前会话生效', 'success');
     }, 2000);
 }
 
