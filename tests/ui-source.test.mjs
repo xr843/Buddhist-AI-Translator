@@ -2,8 +2,24 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
+globalThis.localStorage = {
+    getItem() {
+        return '';
+    }
+};
+
+const { languageMap } = await import('../src/config.js');
+
 const readSource = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 const compact = (source) => source.replace(/\s+/g, '');
+
+function selectOptions(html, selectId) {
+    const selectMatch = html.match(new RegExp(`<select[^>]+id="${selectId}"[^>]*>([\\s\\S]*?)<\\/select>`));
+    assert.ok(selectMatch, `missing #${selectId} select`);
+
+    return [...selectMatch[1].matchAll(/<option\s+value="([^"]+)"[^>]*>([^<]+)<\/option>/g)]
+        .map(([, value, label]) => ({ value, label: label.trim() }));
+}
 
 test('src/ui.js registers documented Ctrl keyboard shortcuts', async () => {
     const source = await readSource('src/ui.js');
@@ -26,6 +42,23 @@ test('styles.css keeps the fixed footer from covering translator content', async
     assert.doesNotMatch(source, /body\s*{[^}]*overflow:\s*hidden/s);
     assert.match(source, /\.translator\s*{[^}]*padding-bottom:\s*(?:calc\([^}]+footer|[4-9]\dpx|[1-9]\d{2,}px)/s);
     assert.match(source, /\.translator-card\s*{[^}]*min-height:\s*(?:min\(|clamp\(|calc\()/s);
+});
+
+test('index.html language selectors use configured language labels', async () => {
+    const source = await readSource('index.html');
+    const sourceOptions = selectOptions(source, 'source-lang');
+    const targetOptions = selectOptions(source, 'target-lang');
+
+    assert.deepEqual(
+        sourceOptions,
+        Object.entries(languageMap).map(([value, label]) => ({ value, label }))
+    );
+    assert.deepEqual(
+        targetOptions,
+        Object.entries(languageMap)
+            .filter(([value]) => !['auto', 'other'].includes(value))
+            .map(([value, label]) => ({ value, label }))
+    );
 });
 
 test('README documents static-server usage and modular project structure', async () => {
