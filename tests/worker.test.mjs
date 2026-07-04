@@ -144,6 +144,42 @@ test('text longer than 5000 characters returns 400', async (t) => {
     assert.match(body.error, /5000/);
 });
 
+test('unsupported language codes return 400 without calling fetch', async (t) => {
+    const originalFetch = globalThis.fetch;
+    let calls = 0;
+    globalThis.fetch = async () => {
+        calls += 1;
+        throw new Error('DeepSeek should not be called for unsupported languages');
+    };
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+
+    const invalidSource = await worker.fetch(request('/translate', {
+        method: 'POST',
+        body: {
+            text: 'sabbe sankhara anicca',
+            sourceLang: 'pirate',
+            targetLang: 'en'
+        }
+    }), { DEEPSEEK_API_KEY: 'test-key' });
+    assert.equal(invalidSource.status, 400);
+    assert.match((await json(invalidSource)).error, /sourceLang/);
+
+    const invalidTarget = await worker.fetch(request('/translate', {
+        method: 'POST',
+        body: {
+            text: 'sabbe sankhara anicca',
+            sourceLang: 'pi',
+            targetLang: 'auto'
+        }
+    }), { DEEPSEEK_API_KEY: 'test-key' });
+    assert.equal(invalidTarget.status, 400);
+    assert.match((await json(invalidTarget)).error, /targetLang/);
+
+    assert.equal(calls, 0);
+});
+
 test('successful translate builds the DeepSeek prompt from text and languages server-side', async (t) => {
     const originalFetch = globalThis.fetch;
     let outboundRequest;
