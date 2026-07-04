@@ -47,6 +47,20 @@ test('src/ui.js delegates API key persistence to config helpers', async () => {
     assert.doesNotMatch(source, /localStorage\.setItem\(['"]deepseek_api_key['"]/);
 });
 
+test('src/ui.js handles clipboard permission failures', async () => {
+    const source = await readSource('src/ui.js');
+    const normalized = compact(source);
+
+    assert.match(normalized, /navigator\.clipboard\.writeText\(resultDiv\.textContent\)\.then\(/);
+    assert.match(normalized, /showMessage\(['"]复制成功['"],['"]success['"]\)/);
+    assert.match(normalized, /writeText\(resultDiv\.textContent\)[\s\S]*\.catch\(/);
+    assert.match(source, /复制失败/);
+    assert.match(normalized, /navigator\.clipboard\.readText\(\)\.then\(/);
+    assert.match(normalized, /sourceTextArea\.value=text/);
+    assert.match(normalized, /readText\(\)[\s\S]*\.catch\(/);
+    assert.match(source, /无法读取剪贴板/);
+});
+
 test('styles.css keeps the fixed footer from covering translator content', async () => {
     const source = await readSource('styles.css');
 
