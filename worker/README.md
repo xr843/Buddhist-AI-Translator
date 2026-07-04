@@ -52,15 +52,18 @@ proxyURL: 'https://buddhist-translator-api.<your-subdomain>.workers.dev'
 
 设置后前端将自动切换为代理模式，不再需要用户输入 API 密钥。
 
-代理模式下前端请求体只应包含：
+代理模式下前端请求体只应包含项目支持的语言代码：
 
 ```json
 {
   "text": "待翻译文本",
-  "sourceLang": "源语言",
-  "targetLang": "目标语言"
+  "sourceLang": "pi",
+  "targetLang": "en"
 }
 ```
+
+`sourceLang` 可使用 `auto`、`other` 或 `src/languages.js` 中的其他语言代码；
+`targetLang` 必须使用实际目标语言代码，不能使用 `auto` 或 `other`。
 
 ## 架构
 
@@ -75,5 +78,6 @@ proxyURL: 'https://buddhist-translator-api.<your-subdomain>.workers.dev'
 - CORS 白名单限制，只允许指定域名调用
 - 本地测试默认允许 `http://localhost:8000` 与 `http://127.0.0.1:8000`
 - Worker 服务端构造 DeepSeek prompt，不信任客户端 prompt 字段
+- Worker 校验 `sourceLang` 和 `targetLang`，拒绝未知语言代码
 - 请求体大小和文本长度限制
 - 基于 KV 的 IP 速率限制（公开共享部署必需）

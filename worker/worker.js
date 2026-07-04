@@ -1,4 +1,4 @@
-import { getLanguageLabel } from '../src/languages.js';
+import { getLanguageLabel, languageMap } from '../src/languages.js';
 
 /**
  * 慧译通 - Cloudflare Worker API 代理
@@ -96,6 +96,11 @@ async function handleTranslate(request, env, origin) {
         return jsonResponse({ error: '文本长度超过限制 (5000字符)' }, origin, 400);
     }
 
+    const languageError = validateLanguages(sourceLang, targetLang);
+    if (languageError) {
+        return jsonResponse({ error: languageError }, origin, 400);
+    }
+
     const prompt = createTranslationPrompt(text, sourceLang, targetLang);
 
     try {
@@ -156,6 +161,22 @@ function isAllowedOrigin(origin) {
     }
 
     return ALLOWED_ORIGINS.some(allowed => parsedOrigin === new URL(allowed).origin);
+}
+
+function validateLanguages(sourceLang, targetLang) {
+    if (!isSupportedLanguage(sourceLang)) {
+        return '不支持的 sourceLang';
+    }
+
+    if (!isSupportedLanguage(targetLang) || targetLang === 'auto' || targetLang === 'other') {
+        return '不支持的 targetLang';
+    }
+
+    return null;
+}
+
+function isSupportedLanguage(language) {
+    return typeof language === 'string' && Object.hasOwn(languageMap, language);
 }
 
 function createTranslationPrompt(text, sourceLang, targetLang) {

@@ -86,6 +86,15 @@ test('README documents static-server usage and modular project structure', async
     assert.match(source, /worker\/\s+#/);
 });
 
+test('worker README documents language-code request fields', async () => {
+    const source = await readSource('worker/README.md');
+
+    assert.match(source, /"sourceLang":\s*"pi"/);
+    assert.match(source, /"targetLang":\s*"en"/);
+    assert.match(source, /语言代码/);
+    assert.match(source, /targetLang[^。\n]+不能使用 `auto` 或 `other`/);
+});
+
 test('CONTRIBUTING points terminology updates at src/terms.json', async () => {
     const source = await readSource('CONTRIBUTING.md');
 
