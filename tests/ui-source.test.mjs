@@ -21,6 +21,10 @@ function selectOptions(html, selectId) {
         .map(([, value, label]) => ({ value, label: label.trim() }));
 }
 
+function anchorTags(html) {
+    return [...html.matchAll(/<a\b[^>]*>/g)].map(([tag]) => tag);
+}
+
 test('src/ui.js registers documented Ctrl keyboard shortcuts', async () => {
     const source = await readSource('src/ui.js');
     const normalized = compact(source);
@@ -59,6 +63,17 @@ test('index.html language selectors use configured language labels', async () =>
             .filter(([value]) => !['auto', 'other'].includes(value))
             .map(([value, label]) => ({ value, label }))
     );
+});
+
+test('index.html protects links that open new tabs', async () => {
+    const source = await readSource('index.html');
+    const newTabLinks = anchorTags(source).filter(tag => /target="_blank"/.test(tag));
+
+    assert.ok(newTabLinks.length > 0, 'expected at least one external link that opens a new tab');
+    for (const tag of newTabLinks) {
+        assert.match(tag, /\brel="[^"]*\bnoopener\b[^"]*"/);
+        assert.match(tag, /\brel="[^"]*\bnoreferrer\b[^"]*"/);
+    }
 });
 
 test('README documents static-server usage and modular project structure', async () => {
