@@ -1,3 +1,5 @@
+import { getLanguageLabel } from '../src/languages.js';
+
 /**
  * 慧译通 - Cloudflare Worker API 代理
  *
@@ -157,8 +159,8 @@ function isAllowedOrigin(origin) {
 }
 
 function createTranslationPrompt(text, sourceLang, targetLang) {
-    const source = normalizeLanguage(sourceLang, '自动识别');
-    const target = normalizeLanguage(targetLang, '现代中文');
+    const source = getLanguageLabel(sourceLang, '自动识别');
+    const target = getLanguageLabel(targetLang, '现代中文');
 
     return [
         '请以佛教文献翻译专家的身份完成翻译。',
@@ -174,10 +176,6 @@ function createTranslationPrompt(text, sourceLang, targetLang) {
         text,
         '原文结束'
     ].join('\n');
-}
-
-function normalizeLanguage(language, fallback) {
-    return typeof language === 'string' && language.trim() ? language.trim() : fallback;
 }
 
 function handleCORS(request) {
