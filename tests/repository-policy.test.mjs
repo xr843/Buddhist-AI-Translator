@@ -1,0 +1,40 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import test from 'node:test';
+
+async function readProjectFile(path) {
+  return readFile(new URL(`../${path}`, import.meta.url), 'utf8');
+}
+
+test('GitHub Actions verify workflow runs npm verification on PRs and master pushes', async () => {
+  const workflow = await readProjectFile('.github/workflows/verify.yml');
+
+  assert.match(workflow, /name:\s*Verify/);
+  assert.match(workflow, /pull_request:/);
+  assert.match(workflow, /push:/);
+  assert.match(workflow, /branches:\s*\[\s*master\s*\]/);
+  assert.match(workflow, /actions\/setup-node@v4/);
+  assert.match(workflow, /node-version:\s*22/);
+  assert.match(workflow, /npm run verify/);
+});
+
+test('pull request template asks for summary and test evidence', async () => {
+  const template = await readProjectFile('.github/pull_request_template.md');
+
+  assert.match(template, /Summary/);
+  assert.match(template, /Test Plan/);
+  assert.match(template, /npm run verify/);
+});
+
+test('issue templates cover bug reports and terminology contributions', async () => {
+  const bug = await readProjectFile('.github/ISSUE_TEMPLATE/bug_report.md');
+  const terminology = await readProjectFile('.github/ISSUE_TEMPLATE/terminology.md');
+
+  assert.match(bug, /name:\s*Bug report/);
+  assert.match(bug, /Browser/);
+  assert.match(bug, /Steps to reproduce/);
+
+  assert.match(terminology, /name:\s*Terminology contribution/);
+  assert.match(terminology, /Source reference/);
+  assert.match(terminology, /src\/terms\.json/);
+});
