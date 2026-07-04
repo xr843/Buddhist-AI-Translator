@@ -21,6 +21,24 @@ export function validateInput(text) {
     return cleanText.trim();
 }
 
+export function limitTextLength(text, maxLength) {
+    const value = typeof text === 'string' ? text : '';
+    if (value.length <= maxLength) {
+        return {
+            text: value,
+            length: value.length,
+            truncated: false
+        };
+    }
+
+    const truncatedText = value.substring(0, maxLength);
+    return {
+        text: truncatedText,
+        length: truncatedText.length,
+        truncated: true
+    };
+}
+
 // 移除翻译结果中的引号
 export function removeQuotes(text) {
     if (!text || typeof text !== 'string') return text;

@@ -1,5 +1,5 @@
 import { API_CONFIG, languageMap, storeApiKey } from './config.js';
-import { escapeHtml, validateInput, showMessage } from './utils.js';
+import { escapeHtml, limitTextLength, validateInput, showMessage } from './utils.js';
 import { translateWithDeepSeek, translateWithBuiltIn, hasCachedTranslation } from './translator.js';
 import { initSpeech, startVoiceInput, speakResult, stopSpeaking, isSpeaking } from './speech.js';
 
@@ -129,11 +129,14 @@ async function handleTranslate() {
 // --- 工具函数 ---
 
 function updateCharCount() {
-    const text = sourceTextArea.value;
-    charCount.textContent = `${text.length} / 5000`;
-    if (text.length > 5000) {
+    const limited = limitTextLength(sourceTextArea.value, 5000);
+    if (limited.truncated) {
+        sourceTextArea.value = limited.text;
+    }
+
+    charCount.textContent = `${limited.length} / 5000`;
+    if (limited.truncated) {
         charCount.style.color = '#e74c3c';
-        sourceTextArea.value = text.substring(0, 5000);
     } else {
         charCount.style.color = '#666';
     }
