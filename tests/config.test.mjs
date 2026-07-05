@@ -95,3 +95,29 @@ test('storeApiKey trims keys before persistence and in-memory use', async (t) =>
     assert.deepEqual(writes, [['deepseek_api_key', 'sk-current-session']]);
     assert.equal(config.API_CONFIG.apiKey, 'sk-current-session');
 });
+
+test('proxy URL helpers trim configured values and ignore blank strings', async (t) => {
+    const originalLocalStorage = globalThis.localStorage;
+    globalThis.localStorage = {
+        getItem() {
+            return '';
+        }
+    };
+    t.after(() => {
+        if (originalLocalStorage === undefined) {
+            delete globalThis.localStorage;
+        } else {
+            globalThis.localStorage = originalLocalStorage;
+        }
+    });
+
+    const config = await import(`../src/config.js?proxy-normalize=${Date.now()}`);
+
+    config.API_CONFIG.proxyURL = ' https://translator-worker.example/ ';
+    assert.equal(config.getProxyURL(), 'https://translator-worker.example');
+    assert.equal(config.hasProxyURL(), true);
+
+    config.API_CONFIG.proxyURL = '   ';
+    assert.equal(config.getProxyURL(), '');
+    assert.equal(config.hasProxyURL(), false);
+});

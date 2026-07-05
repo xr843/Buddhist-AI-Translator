@@ -1,4 +1,4 @@
-import { API_CONFIG, languageMap, translationCache, MAX_CACHE_SIZE } from './config.js';
+import { API_CONFIG, languageMap, translationCache, MAX_CACHE_SIZE, getProxyURL, hasProxyURL } from './config.js';
 import { getLanguageLabel } from './languages.js';
 import { removeQuotes } from './utils.js';
 
@@ -102,7 +102,7 @@ export function buildProxyPayload(text, sourceLang, targetLang) {
 }
 
 function buildProxyTranslateURL(proxyURL) {
-    return `${String(proxyURL || '').trim().replace(/\/+$/, '')}/translate`;
+    return `${proxyURL}/translate`;
 }
 
 export function describeTranslationError(error) {
@@ -132,7 +132,8 @@ export function describeTranslationError(error) {
 
 // DeepSeek API 翻译（支持直连和代理模式）
 export async function translateWithDeepSeek(text, sourceLang, targetLang) {
-    const useProxy = !!API_CONFIG.proxyURL;
+    const proxyURL = getProxyURL();
+    const useProxy = hasProxyURL();
 
     // 检查缓存
     const cacheKey = getCacheKey(text, sourceLang, targetLang);
@@ -153,7 +154,7 @@ export async function translateWithDeepSeek(text, sourceLang, targetLang) {
 
         if (useProxy) {
             // 代理模式：密钥存在服务端，前端只发翻译请求
-            response = await fetch(buildProxyTranslateURL(API_CONFIG.proxyURL), {
+            response = await fetch(buildProxyTranslateURL(proxyURL), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(buildProxyPayload(text, sourceLang, targetLang)),
