@@ -39,12 +39,12 @@
 - Modify: `worker/README.md`
 - Create: `tests/worker.test.mjs`
 
-- [ ] Write tests for exact origin allow-listing, rejected origin spoofing, Worker-side prompt construction, missing API key response, invalid text length response, and CORS preflight headers.
-- [ ] Run `node --test tests/worker.test.mjs` and confirm expected failures before implementation.
-- [ ] Update Worker so clients send only `text`, `sourceLang`, and `targetLang`; build the DeepSeek prompt server-side.
-- [ ] Replace `startsWith` origin checks with exact URL origin matching.
-- [ ] Keep KV rate limit supported and document it as required for public shared deployments.
-- [ ] Re-run Worker tests and `node --check worker/worker.js`.
+- [x] Write tests for exact origin allow-listing, rejected origin spoofing, Worker-side prompt construction, missing API key response, invalid text length response, and CORS preflight headers.
+- [x] Run `node --test tests/worker.test.mjs` and confirm expected failures before implementation.
+- [x] Update Worker so clients send only `text`, `sourceLang`, and `targetLang`; build the DeepSeek prompt server-side.
+- [x] Replace `startsWith` origin checks with exact URL origin matching.
+- [x] Keep KV rate limit supported and document it as required for public shared deployments.
+- [x] Re-run Worker tests and `node --check worker/worker.js`.
 
 ## Task 3: Glossary-Aware Translator
 
@@ -53,11 +53,11 @@
 - Modify: `src/config.js`
 - Create: `tests/translator.test.mjs`
 
-- [ ] Write tests for glossary extraction from `terms.json`, prompt inclusion of matched terms, proxy body omitting raw prompt, and fallback returning glossary guidance instead of pretending to translate whole passages.
-- [ ] Run `node --test tests/translator.test.mjs` and confirm failures.
-- [ ] Export small testable helpers from `src/translator.js`: `createTranslationPrompt`, `findMatchingTerms`, and `buildProxyPayload`.
-- [ ] Update `translateWithDeepSeek` proxy mode to send the smaller payload.
-- [ ] Re-run translator tests and syntax checks.
+- [x] Write tests for glossary extraction from `terms.json`, prompt inclusion of matched terms, proxy body omitting raw prompt, and fallback returning glossary guidance instead of pretending to translate whole passages.
+- [x] Run `node --test tests/translator.test.mjs` and confirm failures.
+- [x] Export small testable helpers from `src/translator.js`: `createTranslationPrompt`, `findMatchingTerms`, and `buildProxyPayload`.
+- [x] Update `translateWithDeepSeek` proxy mode to send the smaller payload.
+- [x] Re-run translator tests and syntax checks.
 
 ## Task 4: UI Behavior and Layout
 
@@ -66,12 +66,12 @@
 - Modify: `styles.css`
 - Create: `tests/ui-source.test.mjs`
 
-- [ ] Write source-level tests that assert documented shortcuts are registered and fixed-footer overlap mitigation exists.
-- [ ] Run `node --test tests/ui-source.test.mjs` and confirm failures.
-- [ ] Add keyboard shortcuts for translate, copy, paste, and clear.
-- [ ] Avoid intercepting shortcuts while typing unless the documented combination is used.
-- [ ] Adjust page/footer layout so the footer does not cover the translation panel at 1280x720.
-- [ ] Re-run UI tests and capture a Playwright screenshot.
+- [x] Write source-level tests that assert documented shortcuts are registered and fixed-footer overlap mitigation exists.
+- [x] Run `node --test tests/ui-source.test.mjs` and confirm failures.
+- [x] Add keyboard shortcuts for translate, copy, paste, and clear.
+- [x] Avoid intercepting shortcuts while typing unless the documented combination is used.
+- [x] Adjust page/footer layout so the footer does not cover the translation panel at 1280x720.
+- [x] Re-run UI tests and capture a Playwright screenshot.
 
 ## Task 5: Documentation and Cleanup
 
@@ -93,3 +93,4 @@
 - Spec coverage: the plan covers P0/P1/P2 foundations from the analysis: docs sync, Worker security, tests, shortcuts, layout, and glossary-aware prompts.
 - Placeholder scan: no TBD/TODO placeholders are present.
 - Scope control: deeper product work such as annotated export, expert review workflow, and release automation is intentionally left for later once the app has a testable baseline.
+- Screenshot check: captured the local app at 1280x720 with Playwright CLI to `/tmp/buddhist-ai-translator-1280x720.png` after serving the static site from `127.0.0.1:4173`.
