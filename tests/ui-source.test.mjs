@@ -92,6 +92,13 @@ test('src/ui.js shows classified API translation errors', async () => {
     assert.doesNotMatch(source, /showMessage\(['"]API暂时不可用，使用内置翻译['"],\s*['"]warning['"]\)/);
 });
 
+test('src/ui.js warns when falling back from API translation', async () => {
+    const source = await readSource('src/ui.js');
+
+    assert.match(source, /console\.warn\(['"]API翻译失败，使用内置翻译:/);
+    assert.doesNotMatch(source, /console\.log\(['"]API翻译失败，使用内置翻译:/);
+});
+
 test('styles.css keeps the fixed footer from covering translator content', async () => {
     const source = await readSource('styles.css');
 

@@ -111,7 +111,7 @@ async function handleTranslate() {
             resultDiv.innerHTML = `<div class="translation-text">${escapeHtml(result)}</div>`;
             if (isFromCache) showMessage('使用缓存结果，响应更快！', 'success');
         } catch (apiError) {
-            console.log('API翻译失败，使用内置翻译:', apiError.message);
+            console.warn('API翻译失败，使用内置翻译:', apiError.message);
             const result = translateWithBuiltIn(sourceText, sourceLang, targetLang);
             resultDiv.innerHTML = `<div class="translation-text">${escapeHtml(result)}</div>`;
             showMessage(describeTranslationError(apiError), 'warning');
