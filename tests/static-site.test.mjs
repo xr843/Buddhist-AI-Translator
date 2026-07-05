@@ -89,6 +89,16 @@ test('local asset check reports missing files while ignoring external URLs and a
     assert.deepEqual(await findMissingLocalAssetReferences(html, tempRoot), ['src/missing.js']);
 });
 
+test('project structure does not keep the legacy bundled script', async () => {
+    const readme = await readFile(path.join(repoRoot, 'README.md'), 'utf8');
+
+    assert.doesNotMatch(readme, /script\.js/);
+    await assert.rejects(
+        stat(path.join(repoRoot, 'script.js')),
+        { code: 'ENOENT' }
+    );
+});
+
 test('README live demo links match the canonical site URL', async () => {
     const [html, readme] = await Promise.all([
         readFile(path.join(repoRoot, 'index.html'), 'utf8'),

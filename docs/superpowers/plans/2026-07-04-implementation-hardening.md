@@ -81,12 +81,12 @@
 - Modify: `worker/README.md`
 - Modify/Delete: `script.js`
 
-- [ ] Update README to describe HTTP/static-server usage rather than direct `file://` usage.
-- [ ] Update project structure to point at `src/`, `worker/`, and `tests/`.
-- [ ] Clarify API modes: BYOK local browser key vs Worker proxy.
-- [ ] Update contribution instructions to use `src/terms.json`, not the old `script.js` object.
-- [ ] Either remove `script.js` or clearly mark it as legacy if keeping it is necessary.
-- [ ] Run `npm run verify` and inspect `git diff`.
+- [x] Update README to describe HTTP/static-server usage rather than direct `file://` usage.
+- [x] Update project structure to point at `src/`, `worker/`, and `tests/`.
+- [x] Clarify API modes: BYOK local browser key vs Worker proxy.
+- [x] Update contribution instructions to use `src/terms.json`, not the old `script.js` object.
+- [x] Either remove `script.js` or clearly mark it as legacy if keeping it is necessary.
+- [x] Run `npm run verify` and inspect `git diff`.
 
 ## Self-Review
 
