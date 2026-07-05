@@ -52,6 +52,13 @@ proxyURL: 'https://buddhist-translator-api.<your-subdomain>.workers.dev'
 
 设置后前端将自动切换为代理模式，不再需要用户输入 API 密钥。
 
+同时更新 `index.html` 中的 Content-Security-Policy，把你的 Worker origin
+加入 `connect-src`。只添加你实际部署的 Worker URL，不要放宽为通配域名：
+
+```html
+connect-src 'self' https://api.deepseek.com https://buddhist-translator-api.<your-subdomain>.workers.dev;
+```
+
 代理模式下前端请求体只应包含项目支持的语言代码：
 
 ```json

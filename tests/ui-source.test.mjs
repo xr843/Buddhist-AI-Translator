@@ -171,6 +171,15 @@ test('worker README documents language-code request fields', async () => {
     assert.match(source, /targetLang[^。\n]+不能使用 `auto` 或 `other`/);
 });
 
+test('worker README documents CSP requirements for proxy mode', async () => {
+    const source = await readSource('worker/README.md');
+
+    assert.match(source, /Content-Security-Policy|CSP/);
+    assert.match(source, /connect-src/);
+    assert.match(source, /index\.html/);
+    assert.match(source, /workers\.dev|Worker origin|Worker URL/);
+});
+
 test('CONTRIBUTING points terminology updates at src/terms.json', async () => {
     const source = await readSource('CONTRIBUTING.md');
 
