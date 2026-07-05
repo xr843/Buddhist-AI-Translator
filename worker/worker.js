@@ -67,6 +67,11 @@ export default {
 };
 
 async function handleTranslate(request, env, origin) {
+    const contentType = request.headers.get('Content-Type') || '';
+    if (!contentType.toLowerCase().includes('application/json')) {
+        return jsonResponse({ error: 'Content-Type 必须为 application/json' }, origin, 415);
+    }
+
     // 检查 API 密钥是否已配置
     if (!env.DEEPSEEK_API_KEY) {
         return jsonResponse({ error: '服务端 API 密钥未配置' }, origin, 500);
