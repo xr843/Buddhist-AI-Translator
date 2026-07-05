@@ -55,6 +55,11 @@ python3 -m http.server 8000
 2. Worker 代理模式: 部署 `worker/`，在 `src/config.js` 配置 `proxyURL`
 3. 公共部署建议使用 Worker 代理，避免在浏览器暴露共享密钥
 
+**本地验证**:
+```bash
+npm run verify
+```
+
 ### 键盘快捷键
 
 | 快捷键 | 功能 |
@@ -124,6 +129,11 @@ python3 -m http.server 8000
 1. BYOK mode: get an API key from [DeepSeek Platform](https://platform.deepseek.com) and save it locally in the browser
 2. Worker proxy mode: deploy `worker/` and set `proxyURL` in `src/config.js`
 3. Use the Worker proxy for public deployments so shared keys stay server-side
+
+**Local Verification**:
+```bash
+npm run verify
+```
 
 ### Keyboard Shortcuts
 

@@ -158,6 +158,7 @@ test('README documents static-server usage and modular project structure', async
 
     assert.doesNotMatch(lower, /open\s+index\.html|打开\s+index\.html|浏览器中打开\s+index\.html/);
     assert.match(lower, /http:\/\/127\.0\.0\.1|python3\s+-m\s+http\.server|static server|静态服务器/);
+    assert.match(source, /npm run verify/);
     assert.match(source, /src\/\s+#/);
     assert.match(source, /worker\/\s+#/);
 });
