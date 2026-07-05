@@ -75,6 +75,14 @@ test('OPTIONS preflight rejects disallowed origins', async () => {
     assert.equal(response.headers.get('Vary'), 'Origin');
 });
 
+test('translate endpoint rejects unsupported methods with Allow header', async () => {
+    const response = await worker.fetch(request('/translate', { method: 'GET' }), {});
+
+    assert.equal(response.status, 405);
+    assert.equal(response.headers.get('Allow'), 'POST, OPTIONS');
+    assert.match((await json(response)).error, /方法不允许/);
+});
+
 test('missing DEEPSEEK_API_KEY returns 500 JSON without calling fetch', async (t) => {
     const originalFetch = globalThis.fetch;
     let calls = 0;

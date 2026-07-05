@@ -61,6 +61,14 @@ export default {
         if (url.pathname === '/translate' && request.method === 'POST') {
             return handleTranslate(request, env, origin);
         }
+        if (url.pathname === '/translate') {
+            return jsonResponse(
+                { error: '方法不允许' },
+                origin,
+                405,
+                { Allow: 'POST, OPTIONS' }
+            );
+        }
 
         return jsonResponse({ error: '未知路径' }, origin, 404);
     }
