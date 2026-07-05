@@ -405,6 +405,67 @@ test('unsupported language codes return 400 without calling fetch', async (t) =>
     assert.equal(calls, 0);
 });
 
+test('invalid translate requests do not consume rate limit quota', async (t) => {
+    const originalFetch = globalThis.fetch;
+    let fetchCalls = 0;
+    let kvReads = 0;
+    let kvWrites = 0;
+
+    globalThis.fetch = async () => {
+        fetchCalls += 1;
+        throw new Error('DeepSeek should not be called for invalid requests');
+    };
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+
+    const env = {
+        DEEPSEEK_API_KEY: 'test-key',
+        RATE_LIMIT_KV: {
+            async get() {
+                kvReads += 1;
+                return [];
+            },
+            async put() {
+                kvWrites += 1;
+            }
+        }
+    };
+
+    const malformedJson = await worker.fetch(new Request('https://translator-worker.example/translate', {
+        method: 'POST',
+        headers: {
+            Origin: ALLOWED_ORIGIN,
+            'Content-Type': 'application/json'
+        },
+        body: '{"text":'
+    }), env);
+    assert.equal(malformedJson.status, 400);
+
+    const missingText = await worker.fetch(request('/translate', {
+        method: 'POST',
+        body: {
+            sourceLang: 'pi',
+            targetLang: 'en'
+        }
+    }), env);
+    assert.equal(missingText.status, 400);
+
+    const unsupportedLanguage = await worker.fetch(request('/translate', {
+        method: 'POST',
+        body: {
+            text: 'sabbe sankhara anicca',
+            sourceLang: 'pirate',
+            targetLang: 'en'
+        }
+    }), env);
+    assert.equal(unsupportedLanguage.status, 400);
+
+    assert.equal(fetchCalls, 0);
+    assert.equal(kvReads, 0);
+    assert.equal(kvWrites, 0);
+});
+
 test('rate-limited translate responses include Retry-After', async (t) => {
     const originalFetch = globalThis.fetch;
     const originalDateNow = Date.now;
