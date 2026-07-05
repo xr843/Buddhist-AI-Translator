@@ -193,6 +193,14 @@ test('worker README documents CSP requirements for proxy mode', async () => {
     assert.match(source, /workers\.dev|Worker origin|Worker URL/);
 });
 
+test('worker README documents translate request limits', async () => {
+    const source = await readSource('worker/README.md');
+
+    assert.match(source, /64\s*KB/i);
+    assert.match(source, /5000\s*字符/);
+    assert.match(source, /413/);
+});
+
 test('CONTRIBUTING points terminology updates at src/terms.json', async () => {
     const source = await readSource('CONTRIBUTING.md');
 
