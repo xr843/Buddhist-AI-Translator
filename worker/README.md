@@ -72,6 +72,11 @@ connect-src 'self' https://api.deepseek.com https://buddhist-translator-api.<you
 `sourceLang` 可使用 `auto`、`other` 或 `src/languages.js` 中的其他语言代码；
 `targetLang` 必须使用实际目标语言代码，不能使用 `auto` 或 `other`。
 
+## 请求限制
+
+`/translate` 只接受 `application/json` 请求。单个请求体超过 64KB 时，Worker
+会在解析 JSON 前返回 `413`。`text` 字段最多 5000 字符，超出时返回 `400`。
+
 ## 架构
 
 ```
