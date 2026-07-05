@@ -174,6 +174,31 @@ test('non-JSON translate requests return 415 without calling fetch', async (t) =
     assert.match((await json(response)).error, /Content-Type/);
 });
 
+test('translate rejects non-object JSON bodies without calling fetch', async (t) => {
+    const originalFetch = globalThis.fetch;
+    let calls = 0;
+    globalThis.fetch = async () => {
+        calls += 1;
+        throw new Error('DeepSeek should not be called for non-object JSON bodies');
+    };
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+
+    const response = await worker.fetch(new Request('https://translator-worker.example/translate', {
+        method: 'POST',
+        headers: {
+            Origin: ALLOWED_ORIGIN,
+            'Content-Type': 'application/json'
+        },
+        body: 'null'
+    }), { DEEPSEEK_API_KEY: 'test-key' });
+
+    assert.equal(response.status, 400);
+    assert.equal(calls, 0);
+    assert.match((await json(response)).error, /请求体格式错误/);
+});
+
 test('text longer than 5000 characters returns 400', async (t) => {
     const originalFetch = globalThis.fetch;
     let calls = 0;
