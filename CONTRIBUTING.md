@@ -117,7 +117,6 @@ Test Plan 中保留实际运行过的验证命令。
 如有任何问题或建议，请通过以下方式联系：
 
 - **GitHub Issues**: [提交问题](https://github.com/xr843/Buddhist-AI-Translator/issues)
-- **Discussions**: [参与讨论](https://github.com/xr843/Buddhist-AI-Translator/discussions)
 
 ## 🙏 致谢
 
