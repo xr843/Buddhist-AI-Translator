@@ -44,3 +44,16 @@ test('limitTextLength reports the displayed length after truncation', () => {
         truncated: false
     });
 });
+
+test('validateInput preserves ordinary prose containing equals signs', () => {
+    assert.equal(
+        utils.validateInput('one = one; condition = cause'),
+        'one = one; condition = cause'
+    );
+});
+
+test('validateInput strips dangerous HTML while preserving safe text', () => {
+    assert.equal(utils.validateInput('before <script>alert("x")</script> after'), 'before  after');
+    assert.equal(utils.validateInput('<img src="x" onerror="alert(1)">'), '<img src="x">');
+    assert.equal(utils.validateInput('<button onclick=alert(1)>Click</button>'), '<button>Click</button>');
+});

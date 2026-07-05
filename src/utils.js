@@ -15,13 +15,15 @@ export function validateInput(text) {
     const dangerousPatterns = [
         /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
         /<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi,
-        /javascript:/gi,
-        /on\w+\s*=/gi
+        /javascript:/gi
     ];
     let cleanText = text;
     dangerousPatterns.forEach(pattern => {
         cleanText = cleanText.replace(pattern, '');
     });
+    cleanText = cleanText.replace(/<[^>]*>/g, tag => (
+        tag.replace(/\s+on[\w:-]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)/gi, '')
+    ));
     return cleanText.trim();
 }
 
