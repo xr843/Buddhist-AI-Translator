@@ -44,6 +44,7 @@ export default {
                 status: 403,
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-Content-Type-Options': 'nosniff',
                     'Vary': 'Origin'
                 }
             });
