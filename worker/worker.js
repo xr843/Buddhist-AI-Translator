@@ -135,9 +135,8 @@ async function handleTranslate(request, env, origin) {
         });
 
         if (!deepseekResponse.ok) {
-            const errorData = await deepseekResponse.json().catch(() => ({}));
             return jsonResponse(
-                { error: `DeepSeek API 错误: ${deepseekResponse.status} ${errorData.error?.message || ''}` },
+                { error: `DeepSeek API 错误: ${deepseekResponse.status}` },
                 origin,
                 deepseekResponse.status
             );

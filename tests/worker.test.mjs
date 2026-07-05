@@ -262,6 +262,31 @@ test('upstream fetch failures do not expose internal error details', async (t) =
     assert.equal((await json(response)).error, '代理请求失败');
 });
 
+test('upstream API errors do not expose provider error messages', async (t) => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async () => new Response(JSON.stringify({
+        error: { message: 'invalid key sk-internal-test-token for account 123' }
+    }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+    });
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+
+    const response = await worker.fetch(request('/translate', {
+        method: 'POST',
+        body: {
+            text: 'sabbe sankhara anicca',
+            sourceLang: 'pi',
+            targetLang: 'en'
+        }
+    }), { DEEPSEEK_API_KEY: 'test-key' });
+
+    assert.equal(response.status, 401);
+    assert.equal((await json(response)).error, 'DeepSeek API 错误: 401');
+});
+
 test('successful translate builds the DeepSeek prompt from text and languages server-side', async (t) => {
     const originalFetch = globalThis.fetch;
     let outboundRequest;
