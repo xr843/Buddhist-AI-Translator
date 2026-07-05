@@ -96,6 +96,25 @@ test('src/ui.js handles clipboard permission failures', async () => {
     assert.match(source, /无法读取剪贴板/);
 });
 
+test('src/ui.js exports translation results as a downloadable text file', async () => {
+    const [html, source] = await Promise.all([
+        readSource('index.html'),
+        readSource('src/ui.js')
+    ]);
+    const normalized = compact(source);
+
+    assert.match(html, /id="download-btn"/);
+    assert.match(html, /title="下载译文"/);
+    assert.match(source, /document\.getElementById\(['"]download-btn['"]\)\.addEventListener\(['"]click['"],\s*downloadResult\)/);
+    assert.match(normalized, /functiondownloadResult\(\)/);
+    assert.match(normalized, /resultDiv\.querySelector\(['"]\.translation-text['"]\)/);
+    assert.match(normalized, /newBlob\(\[exportText\],\{type:['"]text\/plain;charset=utf-8['"]\}\)/);
+    assert.match(normalized, /a\.download=['"]buddhist-translation-/);
+    assert.match(normalized, /URL\.createObjectURL\(blob\)/);
+    assert.match(normalized, /URL\.revokeObjectURL\(url\)/);
+    assert.match(source, /没有可下载的翻译结果/);
+});
+
 test('src/ui.js shows classified API translation errors', async () => {
     const source = await readSource('src/ui.js');
 

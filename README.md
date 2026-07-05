@@ -31,6 +31,7 @@
 | **18 种语言** | 梵文、巴利文、藏文、文言文、现代中文、英文等 |
 | **50+ 术语库** | 内置专业佛教术语数据库，确保翻译准确性 |
 | **语音功能** | 语音输入 + 多语言朗读，支持分段高亮 |
+| **结果导出** | 一键下载译文、原文和语言信息为 `.txt` 文件 |
 | **静态部署** | 纯前端 ES 模块，可用任意静态服务器运行 |
 
 ### 支持语言
@@ -109,6 +110,7 @@ Buddhist AI Translator is a specialized AI-powered translation platform designed
 | **18 Languages** | Sanskrit, Pali, Tibetan, Classical Chinese, Modern Chinese, English, etc. |
 | **50+ Terms** | Built-in professional Buddhist terminology database |
 | **Voice Support** | Speech input + multi-language text-to-speech with segment highlighting |
+| **Result Export** | Download the source text, translation, and language metadata as a `.txt` file |
 | **Static Deployment** | Frontend ES modules that run from any static server |
 
 ### Supported Languages

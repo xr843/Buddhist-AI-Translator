@@ -114,6 +114,19 @@ async function runSmokeCheck() {
       throw new Error(`Expected copied translation text, received: ${clipboardText}`);
     }
 
+    const download = page.waitForEvent('download');
+    await page.locator('#download-btn').click();
+    const downloadedFile = await download;
+    const downloadedText = await readFile(await downloadedFile.path(), 'utf8');
+    if (!/^buddhist-translation-\d{4}-\d{2}-\d{2}\.txt$/.test(downloadedFile.suggestedFilename())) {
+      throw new Error(`Unexpected translation download filename: ${downloadedFile.suggestedFilename()}`);
+    }
+    for (const expectedText of ['源语言: 自动检测', '目标语言: 英文', '原文:', '观自在菩萨', '译文:', 'Avalokiteshvara Bodhisattva']) {
+      if (!downloadedText.includes(expectedText)) {
+        throw new Error(`Downloaded translation is missing expected text: ${expectedText}`);
+      }
+    }
+
     await page.locator('#clear-input').click();
     const sourceText = await page.locator('#source-text').inputValue();
     const charCount = (await page.locator('.char-count').textContent() || '').trim();
