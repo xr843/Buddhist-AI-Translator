@@ -175,7 +175,10 @@ export async function translateWithDeepSeek(text, sourceLang, targetLang) {
         let result;
         if (useProxy) {
             // 代理返回格式: { translation: "..." }
-            result = (data.translation || '').trim();
+            if (typeof data.translation !== 'string' || data.translation.trim().length === 0) {
+                throw new Error('API返回数据格式错误');
+            }
+            result = data.translation.trim();
         } else {
             if (!data.choices?.[0]?.message) {
                 throw new Error('API返回数据格式错误');

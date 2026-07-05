@@ -21,7 +21,7 @@ const fixtureTerms = {
 };
 
 const translator = await import('../src/translator.js');
-const { languageMap } = await import('../src/config.js');
+const { API_CONFIG, languageMap, translationCache } = await import('../src/config.js');
 
 function installTermsFetch() {
   const calls = [];
@@ -111,6 +111,30 @@ test('buildProxyPayload returns only text, sourceLang, and targetLang', () => {
     }
   );
   assert.equal('prompt' in translator.buildProxyPayload('观自在菩萨', 'zh-classical', 'en'), false);
+});
+
+test('translateWithDeepSeek rejects proxy responses without translation text', async (t) => {
+  const originalFetch = globalThis.fetch;
+  const originalProxyURL = API_CONFIG.proxyURL;
+
+  API_CONFIG.proxyURL = 'https://translator-worker.example';
+  translationCache.clear();
+  globalThis.fetch = async () => new Response(JSON.stringify({ usage: null }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' }
+  });
+
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+    API_CONFIG.proxyURL = originalProxyURL;
+    translationCache.clear();
+  });
+
+  await assert.rejects(
+    translator.translateWithDeepSeek('观自在菩萨', 'zh-classical', 'en'),
+    /API返回数据格式错误/
+  );
+  assert.equal(translationCache.size, 0);
 });
 
 test('describeTranslationError maps API failures to actionable UI messages', () => {
