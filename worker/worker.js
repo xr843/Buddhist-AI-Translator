@@ -160,7 +160,12 @@ async function handleTranslate(request, env, origin) {
             );
         }
 
-        const data = await deepseekResponse.json();
+        let data;
+        try {
+            data = await deepseekResponse.json();
+        } catch {
+            return jsonResponse({ error: 'API 返回数据格式异常' }, origin, 502);
+        }
 
         if (!data.choices?.[0]?.message?.content) {
             return jsonResponse({ error: 'API 返回数据格式异常' }, origin, 502);
