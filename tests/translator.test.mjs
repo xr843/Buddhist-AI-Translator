@@ -155,6 +155,33 @@ test('translateWithDeepSeek rejects proxy responses without translation text', a
   assert.equal(translationCache.size, 0);
 });
 
+test('translateWithDeepSeek normalizes proxy URLs before calling translate', async (t) => {
+  const originalFetch = globalThis.fetch;
+  const originalProxyURL = API_CONFIG.proxyURL;
+  let requestedUrl = '';
+
+  API_CONFIG.proxyURL = ' https://translator-worker.example/ ';
+  translationCache.clear();
+  globalThis.fetch = async (url) => {
+    requestedUrl = url;
+    return new Response(JSON.stringify({ translation: 'Impermanence' }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  };
+
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+    API_CONFIG.proxyURL = originalProxyURL;
+    translationCache.clear();
+  });
+
+  const result = await translator.translateWithDeepSeek('诸行无常', 'zh-classical', 'en');
+
+  assert.equal(result, 'Impermanence');
+  assert.equal(requestedUrl, 'https://translator-worker.example/translate');
+});
+
 test('translateWithDeepSeek classifies malformed successful JSON responses', async (t) => {
   const originalFetch = globalThis.fetch;
   const originalProxyURL = API_CONFIG.proxyURL;
