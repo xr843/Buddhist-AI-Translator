@@ -137,6 +137,30 @@ test('translateWithDeepSeek rejects proxy responses without translation text', a
   assert.equal(translationCache.size, 0);
 });
 
+test('translateWithDeepSeek classifies malformed successful JSON responses', async (t) => {
+  const originalFetch = globalThis.fetch;
+  const originalProxyURL = API_CONFIG.proxyURL;
+
+  API_CONFIG.proxyURL = 'https://translator-worker.example';
+  translationCache.clear();
+  globalThis.fetch = async () => new Response('not json', {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' }
+  });
+
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+    API_CONFIG.proxyURL = originalProxyURL;
+    translationCache.clear();
+  });
+
+  await assert.rejects(
+    translator.translateWithDeepSeek('舍利子', 'zh-classical', 'en'),
+    /API返回数据格式错误/
+  );
+  assert.equal(translationCache.size, 0);
+});
+
 test('describeTranslationError maps API failures to actionable UI messages', () => {
   assert.equal(
     translator.describeTranslationError(new Error('API密钥未配置')),

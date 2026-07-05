@@ -170,7 +170,9 @@ export async function translateWithDeepSeek(text, sourceLang, targetLang) {
             throw new Error(`API请求失败: ${response.status} ${errorData.error?.message || response.statusText}`);
         }
 
-        const data = await response.json();
+        const data = await response.json().catch(() => {
+            throw new Error('API返回数据格式错误');
+        });
 
         let result;
         if (useProxy) {
