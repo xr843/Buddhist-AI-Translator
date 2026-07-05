@@ -70,6 +70,16 @@ test('src/ui.js delegates API key persistence to config helpers', async () => {
     assert.doesNotMatch(source, /localStorage\.setItem\(['"]deepseek_api_key['"]/);
 });
 
+test('src/ui.js initializes the character count for restored input text', async () => {
+    const source = await readSource('src/ui.js');
+    const normalized = compact(source);
+
+    assert.match(
+        normalized,
+        /exportfunctioninitializeUI\(\)[\s\S]*bindEvents\(\);updateLanguageLabels\(\);updateCharCount\(\);checkApiKeyStatus\(\);/
+    );
+});
+
 test('src/ui.js handles clipboard permission failures', async () => {
     const source = await readSource('src/ui.js');
     const normalized = compact(source);
