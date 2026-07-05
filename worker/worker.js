@@ -105,6 +105,10 @@ async function handleTranslate(request, env, origin) {
         return jsonResponse({ error: '请求体格式错误' }, origin, 400);
     }
 
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+        return jsonResponse({ error: '请求体格式错误' }, origin, 400);
+    }
+
     const { text, sourceLang, targetLang } = body;
 
     if (typeof text !== 'string' || text.trim().length === 0) {
