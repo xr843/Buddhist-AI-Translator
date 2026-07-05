@@ -8,6 +8,7 @@ async function readProjectFile(path) {
 
 test('GitHub Actions verify workflow runs npm verification on PRs and master pushes', async () => {
   const workflow = await readProjectFile('.github/workflows/verify.yml');
+  const packageJson = JSON.parse(await readProjectFile('package.json'));
 
   assert.match(workflow, /name:\s*Verify/);
   assert.match(workflow, /pull_request:/);
@@ -16,6 +17,7 @@ test('GitHub Actions verify workflow runs npm verification on PRs and master pus
   assert.match(workflow, /actions\/setup-node@v4/);
   assert.match(workflow, /node-version:\s*22/);
   assert.match(workflow, /npm run verify/);
+  assert.equal(packageJson.engines?.node, '>=22');
 });
 
 test('pull request template asks for summary and test evidence', async () => {
