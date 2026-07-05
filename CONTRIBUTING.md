@@ -31,7 +31,9 @@ git checkout -b feature/your-feature-name
 python3 -m http.server 8000
 # 访问 http://127.0.0.1:8000/
 
-# 4. 运行检查
+# 4. 安装验证依赖并运行检查
+npm install
+npx playwright install chromium
 npm run verify
 
 # 5. 提交更改

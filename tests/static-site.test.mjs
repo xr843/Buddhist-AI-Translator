@@ -111,3 +111,30 @@ test('README live demo links match the canonical site URL', async () => {
     assert.match(readme, /在线使用\*\*: \[https:\/\/xr843\.github\.io\/Buddhist-AI-Translator\/\]/);
     assert.match(readme, /Online Demo\*\*: \[https:\/\/xr843\.github\.io\/Buddhist-AI-Translator\/\]/);
 });
+
+test('verification includes a real browser smoke check in CI', async () => {
+    const [packageJson, workflow] = await Promise.all([
+        readFile(path.join(repoRoot, 'package.json'), 'utf8'),
+        readFile(path.join(repoRoot, '.github/workflows/verify.yml'), 'utf8')
+    ]);
+    const pkg = JSON.parse(packageJson);
+
+    assert.equal(pkg.scripts['check:smoke'], 'node scripts/smoke-static-site.mjs');
+    assert.match(pkg.scripts.verify, /npm run check:smoke/);
+    assert.ok(pkg.devDependencies?.['@playwright/test'], 'expected @playwright/test dev dependency');
+    assert.match(workflow, /npm ci/);
+    assert.match(workflow, /npx playwright install --with-deps chromium/);
+});
+
+test('local verification docs include dependency and browser setup', async () => {
+    const [readme, contributing] = await Promise.all([
+        readFile(path.join(repoRoot, 'README.md'), 'utf8'),
+        readFile(path.join(repoRoot, 'CONTRIBUTING.md'), 'utf8')
+    ]);
+
+    for (const source of [readme, contributing]) {
+        assert.match(source, /npm install|npm ci/);
+        assert.match(source, /npx playwright install chromium|npx playwright install --with-deps chromium/);
+        assert.match(source, /npm run verify/);
+    }
+});
