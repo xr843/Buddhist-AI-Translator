@@ -121,6 +121,15 @@ test('src/ui.js prevents duplicate translate requests while one is running', asy
     assert.match(normalized, /if\(translateBtn\.disabled\)\{return;\}[\s\S]*constrawText=sourceTextArea\.value\.trim\(\)/);
 });
 
+test('src/ui.js swaps only real translation text back into the input', async () => {
+    const source = await readSource('src/ui.js');
+    const normalized = compact(source);
+
+    assert.match(normalized, /functionswapLanguages\(\)[\s\S]*resultDiv\.querySelector\(['"]\.translation-text['"]\)/);
+    assert.match(normalized, /sourceTextArea\.value=translationText\.textContent/);
+    assert.doesNotMatch(normalized, /consttargetText=resultDiv\.textContent/);
+});
+
 test('styles.css keeps the fixed footer from covering translator content', async () => {
     const source = await readSource('styles.css');
 
