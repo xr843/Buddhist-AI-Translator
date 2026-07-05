@@ -167,11 +167,12 @@ async function handleTranslate(request, env, origin) {
             return jsonResponse({ error: 'API 返回数据格式异常' }, origin, 502);
         }
 
-        if (!data.choices?.[0]?.message?.content) {
+        const content = data.choices?.[0]?.message?.content;
+        if (typeof content !== 'string' || content.trim().length === 0) {
             return jsonResponse({ error: 'API 返回数据格式异常' }, origin, 502);
         }
 
-        const translation = data.choices[0].message.content.trim();
+        const translation = content.trim();
 
         return jsonResponse({
             translation,
