@@ -157,7 +157,6 @@ Buddhist-AI-Translator/
 ├── src/                # ES modules, translator logic, config, terms
 ├── worker/             # Optional Cloudflare Worker proxy
 ├── tests/              # Node source and unit tests
-├── script.js           # Legacy bundled script kept for reference
 ├── README.md           # Documentation
 ├── CONTRIBUTING.md     # Contribution guidelines
 ├── LICENSE             # MIT License
