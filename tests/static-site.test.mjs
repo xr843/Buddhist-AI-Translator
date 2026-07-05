@@ -88,3 +88,16 @@ test('local asset check reports missing files while ignoring external URLs and a
 
     assert.deepEqual(await findMissingLocalAssetReferences(html, tempRoot), ['src/missing.js']);
 });
+
+test('README live demo links match the canonical site URL', async () => {
+    const [html, readme] = await Promise.all([
+        readFile(path.join(repoRoot, 'index.html'), 'utf8'),
+        readFile(path.join(repoRoot, 'README.md'), 'utf8')
+    ]);
+    const canonicalUrl = html.match(/<link rel="canonical" href="([^"]+)">/)?.[1];
+
+    assert.equal(canonicalUrl, 'https://xr843.github.io/Buddhist-AI-Translator/');
+    assert.match(readme, /\[!\[Live Demo\]\([^)]+\)\]\(https:\/\/xr843\.github\.io\/Buddhist-AI-Translator\/\)/);
+    assert.match(readme, /在线使用\*\*: \[https:\/\/xr843\.github\.io\/Buddhist-AI-Translator\/\]/);
+    assert.match(readme, /Online Demo\*\*: \[https:\/\/xr843\.github\.io\/Buddhist-AI-Translator\/\]/);
+});

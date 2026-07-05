@@ -7,7 +7,7 @@
 [![GitHub Stars](https://img.shields.io/github/stars/xr843/Buddhist-AI-Translator?style=for-the-badge&logo=github&color=gold)](https://github.com/xr843/Buddhist-AI-Translator/stargazers)
 [![GitHub Forks](https://img.shields.io/github/forks/xr843/Buddhist-AI-Translator?style=for-the-badge&logo=github)](https://github.com/xr843/Buddhist-AI-Translator/network/members)
 [![License](https://img.shields.io/github/license/xr843/Buddhist-AI-Translator?style=for-the-badge)](LICENSE)
-[![Live Demo](https://img.shields.io/badge/LIVE-DEMO-brightgreen?style=for-the-badge&logo=firefox)](https://xr843.github.io/Buddhist-AI-Translator)
+[![Live Demo](https://img.shields.io/badge/LIVE-DEMO-brightgreen?style=for-the-badge&logo=firefox)](https://xr843.github.io/Buddhist-AI-Translator/)
 
 [English](#english) | [中文](#中文)
 
@@ -40,7 +40,7 @@
 
 ### 快速开始
 
-**在线使用**: [https://xr843.github.io/Buddhist-AI-Translator](https://xr843.github.io/Buddhist-AI-Translator)
+**在线使用**: [https://xr843.github.io/Buddhist-AI-Translator/](https://xr843.github.io/Buddhist-AI-Translator/)
 
 **本地部署**:
 ```bash
@@ -116,7 +116,7 @@ Buddhist AI Translator is a specialized AI-powered translation platform designed
 
 ### Quick Start
 
-**Online Demo**: [https://xr843.github.io/Buddhist-AI-Translator](https://xr843.github.io/Buddhist-AI-Translator)
+**Online Demo**: [https://xr843.github.io/Buddhist-AI-Translator/](https://xr843.github.io/Buddhist-AI-Translator/)
 
 **Local Deployment**:
 ```bash
