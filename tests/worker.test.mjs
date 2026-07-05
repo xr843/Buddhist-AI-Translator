@@ -113,6 +113,32 @@ test('missing DEEPSEEK_API_KEY returns 500 JSON without calling fetch', async (t
     assert.match(body.error, /API/);
 });
 
+test('missing Worker env returns 500 JSON without throwing or calling fetch', async (t) => {
+    const originalFetch = globalThis.fetch;
+    let calls = 0;
+    globalThis.fetch = async () => {
+        calls += 1;
+        throw new Error('DeepSeek should not be called without Worker env');
+    };
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+
+    const response = await worker.fetch(request('/translate', {
+        method: 'POST',
+        body: {
+            text: 'sabbe sankhara anicca',
+            sourceLang: 'Pali',
+            targetLang: 'English'
+        }
+    }));
+
+    assert.equal(response.status, 500);
+    assert.equal(response.headers.get('Content-Type'), 'application/json');
+    assert.equal(calls, 0);
+    assert.match((await json(response)).error, /API/);
+});
+
 test('invalid or missing text returns 400', async (t) => {
     const originalFetch = globalThis.fetch;
     let calls = 0;

@@ -82,7 +82,7 @@ async function handleTranslate(request, env, origin) {
     }
 
     // 检查 API 密钥是否已配置
-    if (!env.DEEPSEEK_API_KEY) {
+    if (!env?.DEEPSEEK_API_KEY) {
         return jsonResponse({ error: '服务端 API 密钥未配置' }, origin, 500);
     }
 
