@@ -63,6 +63,18 @@ test('OPTIONS preflight returns CORS headers for an allowed origin', async () =>
     assert.equal(response.headers.get('Vary'), 'Origin');
 });
 
+test('OPTIONS preflight rejects disallowed origins', async () => {
+    const response = await worker.fetch(request('/translate', {
+        method: 'OPTIONS',
+        origin: SPOOFED_ORIGIN
+    }), {});
+
+    assert.equal(response.status, 403);
+    assert.equal(response.headers.get('Access-Control-Allow-Origin'), null);
+    assert.equal(response.headers.get('X-Content-Type-Options'), 'nosniff');
+    assert.equal(response.headers.get('Vary'), 'Origin');
+});
+
 test('missing DEEPSEEK_API_KEY returns 500 JSON without calling fetch', async (t) => {
     const originalFetch = globalThis.fetch;
     let calls = 0;

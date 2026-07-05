@@ -214,8 +214,19 @@ function createTranslationPrompt(text, sourceLang, targetLang) {
 
 function handleCORS(request) {
     const origin = request.headers.get('Origin') || '';
+    if (!isAllowedOrigin(origin)) {
+        return new Response(JSON.stringify({ error: '未授权的来源' }), {
+            status: 403,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Content-Type-Options': 'nosniff',
+                'Vary': 'Origin'
+            }
+        });
+    }
+
     const headers = {
-        'Access-Control-Allow-Origin': isAllowedOrigin(origin) ? origin : '',
+        'Access-Control-Allow-Origin': origin,
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
         'Access-Control-Max-Age': '86400',
