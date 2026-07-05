@@ -7,7 +7,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "check:syntax": "node --check src/config.js && node --check src/languages.js && node --check src/main.js && node --check src/translator.js && node --check src/ui.js && node --check src/speech.js && node --check src/utils.js && node --check worker/worker.js",
+    "check:syntax": "node scripts/check-syntax.mjs",
     "check:terms": "node scripts/validate-terms.mjs",
     "test": "node --test tests/*.test.mjs",
     "verify": "npm run check:syntax && npm run check:terms && npm test"
