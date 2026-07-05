@@ -44,6 +44,7 @@ export default {
                 status: 403,
                 headers: {
                     'Content-Type': 'application/json',
+                    'Cache-Control': 'no-store',
                     'X-Content-Type-Options': 'nosniff',
                     'Vary': 'Origin'
                 }
@@ -231,6 +232,7 @@ function handleCORS(request) {
             status: 403,
             headers: {
                 'Content-Type': 'application/json',
+                'Cache-Control': 'no-store',
                 'X-Content-Type-Options': 'nosniff',
                 'Vary': 'Origin'
             }
@@ -254,6 +256,7 @@ function jsonResponse(data, origin, status = 200, extraHeaders = {}) {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': isAllowedOrigin(origin) ? origin : '',
             'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Cache-Control': 'no-store',
             'X-Content-Type-Options': 'nosniff',
             'Vary': 'Origin',
             ...extraHeaders

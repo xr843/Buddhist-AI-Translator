@@ -38,6 +38,7 @@ test('exact origin allow-listing accepts the GitHub Pages origin and rejects spo
     const allowedResponse = await worker.fetch(request('/health'), {});
     assert.equal(allowedResponse.status, 200);
     assert.equal(allowedResponse.headers.get('Access-Control-Allow-Origin'), ALLOWED_ORIGIN);
+    assert.equal(allowedResponse.headers.get('Cache-Control'), 'no-store');
     assert.equal(allowedResponse.headers.get('Vary'), 'Origin');
 
     const localResponse = await worker.fetch(request('/health', { origin: LOCAL_ORIGIN }), {});
@@ -48,6 +49,7 @@ test('exact origin allow-listing accepts the GitHub Pages origin and rejects spo
     const spoofedResponse = await worker.fetch(request('/health', { origin: SPOOFED_ORIGIN }), {});
     assert.equal(spoofedResponse.status, 403);
     assert.equal(spoofedResponse.headers.get('Access-Control-Allow-Origin'), null);
+    assert.equal(spoofedResponse.headers.get('Cache-Control'), 'no-store');
     assert.equal(spoofedResponse.headers.get('X-Content-Type-Options'), 'nosniff');
     assert.equal(spoofedResponse.headers.get('Vary'), 'Origin');
 });
@@ -71,6 +73,7 @@ test('OPTIONS preflight rejects disallowed origins', async () => {
 
     assert.equal(response.status, 403);
     assert.equal(response.headers.get('Access-Control-Allow-Origin'), null);
+    assert.equal(response.headers.get('Cache-Control'), 'no-store');
     assert.equal(response.headers.get('X-Content-Type-Options'), 'nosniff');
     assert.equal(response.headers.get('Vary'), 'Origin');
 });
@@ -354,6 +357,7 @@ test('successful translate builds the DeepSeek prompt from text and languages se
     }), { DEEPSEEK_API_KEY: 'test-key' });
 
     assert.equal(response.status, 200);
+    assert.equal(response.headers.get('Cache-Control'), 'no-store');
     assert.equal((await json(response)).translation, 'All conditioned things are impermanent.');
 
     assert.equal(outboundRequest.url, 'https://api.deepseek.com/v1/chat/completions');
