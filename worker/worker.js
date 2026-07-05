@@ -93,18 +93,6 @@ async function handleTranslate(request, env, origin) {
         return jsonResponse({ error: '服务端 API 密钥未配置' }, origin, 500);
     }
 
-    // 速率限制（使用 Cloudflare KV 或简单的内存限制）
-    const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
-    const rateLimitResult = await checkRateLimit(env, clientIP);
-    if (!rateLimitResult.allowed) {
-        return jsonResponse(
-            { error: `请求过于频繁，请 ${rateLimitResult.retryAfter} 秒后重试` },
-            origin,
-            429,
-            { 'Retry-After': String(rateLimitResult.retryAfter) }
-        );
-    }
-
     let rawBody;
     try {
         rawBody = await request.text();
@@ -141,6 +129,18 @@ async function handleTranslate(request, env, origin) {
     const languageError = validateLanguages(sourceLang, targetLang);
     if (languageError) {
         return jsonResponse({ error: languageError }, origin, 400);
+    }
+
+    // 只对通过基础校验、即将调用上游的请求消耗速率限制配额。
+    const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const rateLimitResult = await checkRateLimit(env, clientIP);
+    if (!rateLimitResult.allowed) {
+        return jsonResponse(
+            { error: `请求过于频繁，请 ${rateLimitResult.retryAfter} 秒后重试` },
+            origin,
+            429,
+            { 'Retry-After': String(rateLimitResult.retryAfter) }
+        );
     }
 
     const prompt = createTranslationPrompt(text, sourceLang, targetLang);
