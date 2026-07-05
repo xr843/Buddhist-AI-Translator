@@ -86,7 +86,10 @@ async function handleTranslate(request, env, origin) {
     }
 
     // 检查 API 密钥是否已配置
-    if (!env?.DEEPSEEK_API_KEY) {
+    const deepseekApiKey = typeof env?.DEEPSEEK_API_KEY === 'string'
+        ? env.DEEPSEEK_API_KEY.trim()
+        : '';
+    if (!deepseekApiKey) {
         return jsonResponse({ error: '服务端 API 密钥未配置' }, origin, 500);
     }
 
@@ -152,7 +155,7 @@ async function handleTranslate(request, env, origin) {
             signal: upstreamAbortController.signal,
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${env.DEEPSEEK_API_KEY}`
+                'Authorization': `Bearer ${deepseekApiKey}`
             },
             body: JSON.stringify({
                 model: 'deepseek-chat',
