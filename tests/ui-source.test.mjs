@@ -25,6 +25,29 @@ function anchorTags(html) {
     return [...html.matchAll(/<a\b[^>]*>/g)].map(([tag]) => tag);
 }
 
+function attributes(tag) {
+    return Object.fromEntries(
+        [...tag.matchAll(/([\w:-]+)="([^"]*)"/g)]
+            .map(([, name, value]) => [name.toLowerCase(), value])
+    );
+}
+
+function contentSecurityPolicy(html) {
+    const metaTags = [...html.matchAll(/<meta\b[^>]*>/g)].map(([tag]) => attributes(tag));
+    const cspMeta = metaTags.find(attrs => attrs['http-equiv']?.toLowerCase() === 'content-security-policy');
+
+    return cspMeta?.content ?? '';
+}
+
+function cspDirectives(policy) {
+    return new Map(
+        policy.split(';')
+            .map(directive => directive.trim().split(/\s+/).filter(Boolean))
+            .filter(parts => parts.length > 0)
+            .map(([name, ...sources]) => [name, sources])
+    );
+}
+
 test('src/ui.js registers documented Ctrl keyboard shortcuts', async () => {
     const source = await readSource('src/ui.js');
     const normalized = compact(source);
@@ -96,6 +119,22 @@ test('index.html protects links that open new tabs', async () => {
         assert.match(tag, /\brel="[^"]*\bnoopener\b[^"]*"/);
         assert.match(tag, /\brel="[^"]*\bnoreferrer\b[^"]*"/);
     }
+});
+
+test('index.html defines a conservative content security policy', async () => {
+    const source = await readSource('index.html');
+    const policy = contentSecurityPolicy(source);
+    const directives = cspDirectives(policy);
+
+    assert.ok(policy, 'missing Content-Security-Policy meta tag');
+    assert.ok(directives.get('default-src')?.includes("'self'"), "default-src should include 'self'");
+    assert.deepEqual(directives.get('object-src'), ["'none'"]);
+    assert.deepEqual(directives.get('base-uri'), ["'self'"]);
+    assert.ok(
+        directives.get('connect-src')?.includes('https://api.deepseek.com'),
+        'connect-src should allow the DeepSeek API'
+    );
+    assert.deepEqual(directives.get('frame-ancestors'), ["'none'"]);
 });
 
 test('README documents static-server usage and modular project structure', async () => {
