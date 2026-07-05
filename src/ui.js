@@ -194,9 +194,9 @@ function swapLanguages() {
     sourceSelect.value = targetSelect.value;
     targetSelect.value = tempValue;
 
-    const targetText = resultDiv.textContent;
-    if (targetText && !targetText.includes('翻译结果将显示在这里')) {
-        sourceTextArea.value = targetText;
+    const translationText = resultDiv.querySelector('.translation-text');
+    if (translationText) {
+        sourceTextArea.value = translationText.textContent;
         updateCharCount();
     }
     updateLanguageLabels();
