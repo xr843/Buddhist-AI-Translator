@@ -34,7 +34,7 @@ async function json(response) {
     return response.json();
 }
 
-test('exact origin allow-listing accepts the GitHub Pages origin and rejects spoofed origins', async () => {
+test('exact origin allow-listing accepts the GitHub Pages origin and rejects unconfigured origins', async () => {
     const allowedResponse = await worker.fetch(request('/health'), {});
     assert.equal(allowedResponse.status, 200);
     assert.equal(allowedResponse.headers.get('Access-Control-Allow-Origin'), ALLOWED_ORIGIN);
@@ -42,8 +42,8 @@ test('exact origin allow-listing accepts the GitHub Pages origin and rejects spo
     assert.equal(allowedResponse.headers.get('Vary'), 'Origin');
 
     const localResponse = await worker.fetch(request('/health', { origin: LOCAL_ORIGIN }), {});
-    assert.equal(localResponse.status, 200);
-    assert.equal(localResponse.headers.get('Access-Control-Allow-Origin'), LOCAL_ORIGIN);
+    assert.equal(localResponse.status, 403);
+    assert.equal(localResponse.headers.get('Access-Control-Allow-Origin'), null);
     assert.equal(localResponse.headers.get('Vary'), 'Origin');
 
     const spoofedResponse = await worker.fetch(request('/health', { origin: SPOOFED_ORIGIN }), {});
@@ -52,6 +52,27 @@ test('exact origin allow-listing accepts the GitHub Pages origin and rejects spo
     assert.equal(spoofedResponse.headers.get('Cache-Control'), 'no-store');
     assert.equal(spoofedResponse.headers.get('X-Content-Type-Options'), 'nosniff');
     assert.equal(spoofedResponse.headers.get('Vary'), 'Origin');
+});
+
+test('ALLOWED_ORIGINS adds explicit development origins without allowing spoofed origins', async () => {
+    const env = {
+        ALLOWED_ORIGINS: `${LOCAL_ORIGIN}, https://docs.example`
+    };
+
+    const localResponse = await worker.fetch(request('/health', { origin: LOCAL_ORIGIN }), env);
+    assert.equal(localResponse.status, 200);
+    assert.equal(localResponse.headers.get('Access-Control-Allow-Origin'), LOCAL_ORIGIN);
+    assert.equal(localResponse.headers.get('Vary'), 'Origin');
+
+    const docsResponse = await worker.fetch(request('/health', { origin: 'https://docs.example' }), env);
+    assert.equal(docsResponse.status, 200);
+    assert.equal(docsResponse.headers.get('Access-Control-Allow-Origin'), 'https://docs.example');
+
+    const spoofedResponse = await worker.fetch(request('/health', {
+        origin: `${LOCAL_ORIGIN}.evil.example`
+    }), env);
+    assert.equal(spoofedResponse.status, 403);
+    assert.equal(spoofedResponse.headers.get('Access-Control-Allow-Origin'), null);
 });
 
 test('OPTIONS preflight returns CORS headers for an allowed origin', async () => {

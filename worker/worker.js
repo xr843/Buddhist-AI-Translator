@@ -17,13 +17,9 @@ import { getLanguageLabel, languageMap } from '../src/languages.js';
  * 5. 将 Worker URL 填入前端 src/config.js 的 proxyURL
  */
 
-// 允许的来源域名（防止非授权网站调用）
-const ALLOWED_ORIGINS = [
-    'https://xr843.github.io',
-    'http://localhost',
-    'http://localhost:8000',
-    'http://127.0.0.1',
-    'http://127.0.0.1:8000'
+// 默认只允许公开站点；本地或额外前端来源需通过 ALLOWED_ORIGINS 显式配置。
+const DEFAULT_ALLOWED_ORIGINS = [
+    'https://xr843.github.io'
 ];
 
 // 速率限制配置（基于 IP，每分钟最大请求数）
@@ -35,12 +31,12 @@ export default {
     async fetch(request, env) {
         // 处理 CORS 预检请求
         if (request.method === 'OPTIONS') {
-            return handleCORS(request);
+            return handleCORS(request, env);
         }
 
         // 验证来源
         const origin = request.headers.get('Origin') || '';
-        if (!isAllowedOrigin(origin)) {
+        if (!isAllowedOrigin(origin, env)) {
             return new Response(JSON.stringify({ error: '未授权的来源' }), {
                 status: 403,
                 headers: {
@@ -56,7 +52,7 @@ export default {
 
         // 健康检查
         if (url.pathname === '/' || url.pathname === '/health') {
-            return jsonResponse({ status: 'ok', service: '慧译通 API 代理' }, origin);
+            return jsonResponse({ status: 'ok', service: '慧译通 API 代理' }, origin, env);
         }
 
         // 翻译接口
@@ -67,22 +63,23 @@ export default {
             return jsonResponse(
                 { error: '方法不允许' },
                 origin,
+                env,
                 405,
                 { Allow: 'POST, OPTIONS' }
             );
         }
 
-        return jsonResponse({ error: '未知路径' }, origin, 404);
+        return jsonResponse({ error: '未知路径' }, origin, env, 404);
     }
 };
 
 async function handleTranslate(request, env, origin) {
     const contentType = request.headers.get('Content-Type') || '';
     if (!isJsonContentType(contentType)) {
-        return jsonResponse({ error: 'Content-Type 必须为 application/json' }, origin, 415);
+        return jsonResponse({ error: 'Content-Type 必须为 application/json' }, origin, env, 415);
     }
     if (isRequestBodyTooLarge(request)) {
-        return jsonResponse({ error: '请求体过大' }, origin, 413);
+        return jsonResponse({ error: '请求体过大' }, origin, env, 413);
     }
 
     // 检查 API 密钥是否已配置
@@ -90,45 +87,45 @@ async function handleTranslate(request, env, origin) {
         ? env.DEEPSEEK_API_KEY.trim()
         : '';
     if (!deepseekApiKey) {
-        return jsonResponse({ error: '服务端 API 密钥未配置' }, origin, 500);
+        return jsonResponse({ error: '服务端 API 密钥未配置' }, origin, env, 500);
     }
 
     let rawBody;
     try {
         rawBody = await request.text();
     } catch {
-        return jsonResponse({ error: '请求体格式错误' }, origin, 400);
+        return jsonResponse({ error: '请求体格式错误' }, origin, env, 400);
     }
 
     if (new TextEncoder().encode(rawBody).length > MAX_REQUEST_BODY_BYTES) {
-        return jsonResponse({ error: '请求体过大' }, origin, 413);
+        return jsonResponse({ error: '请求体过大' }, origin, env, 413);
     }
 
     let body;
     try {
         body = JSON.parse(rawBody);
     } catch {
-        return jsonResponse({ error: '请求体格式错误' }, origin, 400);
+        return jsonResponse({ error: '请求体格式错误' }, origin, env, 400);
     }
 
     if (!body || typeof body !== 'object' || Array.isArray(body)) {
-        return jsonResponse({ error: '请求体格式错误' }, origin, 400);
+        return jsonResponse({ error: '请求体格式错误' }, origin, env, 400);
     }
 
     const { text, sourceLang, targetLang } = body;
 
     if (typeof text !== 'string' || text.trim().length === 0) {
-        return jsonResponse({ error: '缺少必要参数: text' }, origin, 400);
+        return jsonResponse({ error: '缺少必要参数: text' }, origin, env, 400);
     }
 
     // 输入长度限制
     if (text.length > 5000) {
-        return jsonResponse({ error: '文本长度超过限制 (5000字符)' }, origin, 400);
+        return jsonResponse({ error: '文本长度超过限制 (5000字符)' }, origin, env, 400);
     }
 
     const languageError = validateLanguages(sourceLang, targetLang);
     if (languageError) {
-        return jsonResponse({ error: languageError }, origin, 400);
+        return jsonResponse({ error: languageError }, origin, env, 400);
     }
 
     // 只对通过基础校验、即将调用上游的请求消耗速率限制配额。
@@ -138,6 +135,7 @@ async function handleTranslate(request, env, origin) {
         return jsonResponse(
             { error: '速率限制服务暂时不可用，请稍后重试' },
             origin,
+            env,
             503,
             { 'Retry-After': String(rateLimitResult.retryAfter) }
         );
@@ -146,6 +144,7 @@ async function handleTranslate(request, env, origin) {
         return jsonResponse(
             { error: `请求过于频繁，请 ${rateLimitResult.retryAfter} 秒后重试` },
             origin,
+            env,
             429,
             { 'Retry-After': String(rateLimitResult.retryAfter) }
         );
@@ -182,6 +181,7 @@ async function handleTranslate(request, env, origin) {
             return jsonResponse(
                 { error: `DeepSeek API 错误: ${deepseekResponse.status}` },
                 origin,
+                env,
                 deepseekResponse.status
             );
         }
@@ -190,12 +190,12 @@ async function handleTranslate(request, env, origin) {
         try {
             data = await deepseekResponse.json();
         } catch {
-            return jsonResponse({ error: 'API 返回数据格式异常' }, origin, 502);
+            return jsonResponse({ error: 'API 返回数据格式异常' }, origin, env, 502);
         }
 
         const content = data.choices?.[0]?.message?.content;
         if (typeof content !== 'string' || content.trim().length === 0) {
-            return jsonResponse({ error: 'API 返回数据格式异常' }, origin, 502);
+            return jsonResponse({ error: 'API 返回数据格式异常' }, origin, env, 502);
         }
 
         const translation = content.trim();
@@ -203,10 +203,10 @@ async function handleTranslate(request, env, origin) {
         return jsonResponse({
             translation,
             usage: data.usage || null
-        }, origin);
+        }, origin, env);
 
     } catch {
-        return jsonResponse({ error: '代理请求失败' }, origin, 502);
+        return jsonResponse({ error: '代理请求失败' }, origin, env, 502);
     } finally {
         clearTimeout(upstreamTimeout);
     }
@@ -214,7 +214,24 @@ async function handleTranslate(request, env, origin) {
 
 // --- 工具函数 ---
 
-function isAllowedOrigin(origin) {
+function getAllowedOrigins(env) {
+    const configuredOrigins = typeof env?.ALLOWED_ORIGINS === 'string'
+        ? env.ALLOWED_ORIGINS.split(/[\s,]+/)
+        : [];
+
+    return [...DEFAULT_ALLOWED_ORIGINS, ...configuredOrigins]
+        .map(value => value.trim())
+        .filter(Boolean)
+        .flatMap(value => {
+            try {
+                return [new URL(value).origin];
+            } catch {
+                return [];
+            }
+        });
+}
+
+function isAllowedOrigin(origin, env) {
     let parsedOrigin;
     try {
         parsedOrigin = new URL(origin).origin;
@@ -222,7 +239,7 @@ function isAllowedOrigin(origin) {
         return false;
     }
 
-    return ALLOWED_ORIGINS.some(allowed => parsedOrigin === new URL(allowed).origin);
+    return getAllowedOrigins(env).includes(parsedOrigin);
 }
 
 function validateLanguages(sourceLang, targetLang) {
@@ -271,9 +288,9 @@ function createTranslationPrompt(text, sourceLang, targetLang) {
     ].join('\n');
 }
 
-function handleCORS(request) {
+function handleCORS(request, env) {
     const origin = request.headers.get('Origin') || '';
-    if (!isAllowedOrigin(origin)) {
+    if (!isAllowedOrigin(origin, env)) {
         return new Response(JSON.stringify({ error: '未授权的来源' }), {
             status: 403,
             headers: {
@@ -295,12 +312,12 @@ function handleCORS(request) {
     return new Response(null, { status: 204, headers });
 }
 
-function jsonResponse(data, origin, status = 200, extraHeaders = {}) {
+function jsonResponse(data, origin, env, status = 200, extraHeaders = {}) {
     return new Response(JSON.stringify(data), {
         status,
         headers: {
             'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': isAllowedOrigin(origin) ? origin : '',
+            'Access-Control-Allow-Origin': isAllowedOrigin(origin, env) ? origin : '',
             'Access-Control-Allow-Methods': 'POST, OPTIONS',
             'Cache-Control': 'no-store',
             'X-Content-Type-Options': 'nosniff',

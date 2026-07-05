@@ -2,6 +2,12 @@ name = "buddhist-translator-api"
 main = "worker.js"
 compatibility_date = "2024-01-01"
 
+# 额外允许调用 Worker 的前端来源（可选）。
+# 默认已允许 https://xr843.github.io；本地开发或自定义域名需显式加入：
+#
+# [vars]
+# ALLOWED_ORIGINS = "https://xr843.github.io http://127.0.0.1:8000"
+
 # 速率限制 KV 命名空间（可选）
 # 执行以下命令创建 KV 并绑定：
 #   wrangler kv namespace create RATE_LIMIT_KV
