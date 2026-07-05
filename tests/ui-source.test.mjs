@@ -74,9 +74,11 @@ test('src/ui.js handles clipboard permission failures', async () => {
     const source = await readSource('src/ui.js');
     const normalized = compact(source);
 
-    assert.match(normalized, /navigator\.clipboard\.writeText\(resultDiv\.textContent\)\.then\(/);
+    assert.match(normalized, /consttranslationText=resultDiv\.querySelector\(['"]\.translation-text['"]\)/);
+    assert.match(normalized, /if\(!translationText\)\{showMessage\(['"]没有可复制的翻译结果['"],['"]warning['"]\);return;\}/);
+    assert.match(normalized, /navigator\.clipboard\.writeText\(translationText\.textContent\)\.then\(/);
     assert.match(normalized, /showMessage\(['"]复制成功['"],['"]success['"]\)/);
-    assert.match(normalized, /writeText\(resultDiv\.textContent\)[\s\S]*\.catch\(/);
+    assert.match(normalized, /writeText\(translationText\.textContent\)[\s\S]*\.catch\(/);
     assert.match(source, /复制失败/);
     assert.match(normalized, /navigator\.clipboard\.readText\(\)\.then\(/);
     assert.match(normalized, /sourceTextArea\.value=text/);
