@@ -24,3 +24,30 @@ test('browser modules can be imported by the test harness', async () => {
   assert.equal(typeof speech.initSpeech, 'function');
   assert.equal(typeof ui.initializeUI, 'function');
 });
+
+test('browser entrypoint registers startup with a minimal DOM stub', async (t) => {
+  const originalDocument = globalThis.document;
+  const listeners = [];
+
+  globalThis.document = {
+    addEventListener(type, listener) {
+      listeners.push({ type, listener });
+    }
+  };
+
+  t.after(() => {
+    if (originalDocument === undefined) {
+      delete globalThis.document;
+    } else {
+      globalThis.document = originalDocument;
+    }
+  });
+
+  await import(`../src/main.js?syntax-entrypoint=${Date.now()}`);
+
+  assert.deepEqual(
+    listeners.map(({ type }) => type),
+    ['DOMContentLoaded']
+  );
+  assert.equal(typeof listeners[0].listener, 'function');
+});

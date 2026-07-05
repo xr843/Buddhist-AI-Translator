@@ -28,9 +28,9 @@
 - Create: `package.json`
 - Create: `tests/syntax.test.mjs`
 
-- [ ] Add `package.json` scripts: `test`, `check:syntax`, and `verify`.
-- [ ] Add a syntax test that imports browser modules under minimal `localStorage` and DOM stubs.
-- [ ] Run `npm test` and confirm the initial harness fails only for missing/untestable behavior, not setup errors.
+- [x] Add `package.json` scripts: `test`, `check:syntax`, and `verify`.
+- [x] Add a syntax test that imports browser modules under minimal `localStorage` and DOM stubs.
+- [x] Run `npm test` and confirm the initial harness fails only for missing/untestable behavior, not setup errors.
 
 ## Task 2: Harden Worker Proxy
 
