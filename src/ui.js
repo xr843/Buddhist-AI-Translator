@@ -26,6 +26,7 @@ export function initializeUI() {
 
     bindEvents();
     updateLanguageLabels();
+    updateCharCount();
     checkApiKeyStatus();
 }
 
