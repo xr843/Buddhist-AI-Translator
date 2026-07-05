@@ -8,8 +8,9 @@
   },
   "scripts": {
     "check:syntax": "node scripts/check-syntax.mjs",
+    "check:worker": "node scripts/check-worker-dry-run.mjs",
     "check:terms": "node scripts/validate-terms.mjs",
     "test": "node --test tests/*.test.mjs",
-    "verify": "npm run check:syntax && npm run check:terms && npm test"
+    "verify": "npm run check:syntax && npm run check:worker && npm run check:terms && npm test"
   }
 }
