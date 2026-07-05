@@ -113,6 +113,33 @@ test('buildProxyPayload returns only text, sourceLang, and targetLang', () => {
   assert.equal('prompt' in translator.buildProxyPayload('观自在菩萨', 'zh-classical', 'en'), false);
 });
 
+test('describeTranslationError maps API failures to actionable UI messages', () => {
+  assert.equal(
+    translator.describeTranslationError(new Error('API密钥未配置')),
+    '请先配置 DeepSeek API 密钥，或启用 Worker 代理。'
+  );
+  assert.equal(
+    translator.describeTranslationError(new Error('API请求失败: 401 Invalid API key')),
+    'DeepSeek API 密钥无效，请检查后重新保存。'
+  );
+  assert.equal(
+    translator.describeTranslationError(new Error('API请求失败: 429 rate limit exceeded')),
+    'DeepSeek 请求过于频繁或额度不足，请稍后重试。'
+  );
+  assert.equal(
+    translator.describeTranslationError(new Error('翻译请求超时，请稍后重试')),
+    '翻译请求超时，请稍后重试。'
+  );
+  assert.equal(
+    translator.describeTranslationError(new Error('API请求失败: 502 bad gateway')),
+    'DeepSeek 服务暂时不可用，请稍后重试。'
+  );
+  assert.equal(
+    translator.describeTranslationError(new Error('network failed')),
+    'AI 翻译暂时不可用，已使用内置模式。'
+  );
+});
+
 test('translateWithBuiltIn returns glossary guidance and a recommendation for passages with matched terms', async () => {
   installTermsFetch();
   await translator.loadTerms();

@@ -84,6 +84,14 @@ test('src/ui.js handles clipboard permission failures', async () => {
     assert.match(source, /无法读取剪贴板/);
 });
 
+test('src/ui.js shows classified API translation errors', async () => {
+    const source = await readSource('src/ui.js');
+
+    assert.match(source, /import\s*{[^}]*describeTranslationError[^}]*}\s*from\s*['"]\.\/translator\.js['"]/s);
+    assert.match(source, /describeTranslationError\(apiError\)/);
+    assert.doesNotMatch(source, /showMessage\(['"]API暂时不可用，使用内置翻译['"],\s*['"]warning['"]\)/);
+});
+
 test('styles.css keeps the fixed footer from covering translator content', async () => {
     const source = await readSource('styles.css');
 
