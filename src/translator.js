@@ -182,10 +182,11 @@ export async function translateWithDeepSeek(text, sourceLang, targetLang) {
             }
             result = data.translation.trim();
         } else {
-            if (!data.choices?.[0]?.message) {
+            const content = data.choices?.[0]?.message?.content;
+            if (typeof content !== 'string' || content.trim().length === 0) {
                 throw new Error('API返回数据格式错误');
             }
-            result = data.choices[0].message.content.trim();
+            result = content.trim();
         }
 
         result = removeQuotes(result);
