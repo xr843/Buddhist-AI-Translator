@@ -48,6 +48,7 @@ test('exact origin allow-listing accepts the GitHub Pages origin and rejects spo
     const spoofedResponse = await worker.fetch(request('/health', { origin: SPOOFED_ORIGIN }), {});
     assert.equal(spoofedResponse.status, 403);
     assert.equal(spoofedResponse.headers.get('Access-Control-Allow-Origin'), null);
+    assert.equal(spoofedResponse.headers.get('X-Content-Type-Options'), 'nosniff');
     assert.equal(spoofedResponse.headers.get('Vary'), 'Origin');
 });
 
