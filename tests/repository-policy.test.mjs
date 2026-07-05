@@ -31,6 +31,22 @@ test('syntax verification uses the repository discovery script', async () => {
   assert.match(syntaxScript, /--check/);
 });
 
+test('npm verification includes a Cloudflare Worker dry-run deploy check', async () => {
+  const packageJson = JSON.parse(await readProjectFile('package.json'));
+  const workflow = await readProjectFile('.github/workflows/verify.yml');
+  const workerCheckScript = await readProjectFile('scripts/check-worker-dry-run.mjs');
+
+  assert.equal(packageJson.scripts?.['check:worker'], 'node scripts/check-worker-dry-run.mjs');
+  assert.match(workerCheckScript, /wrangler@4/);
+  assert.match(workerCheckScript, /deploy/);
+  assert.match(workerCheckScript, /--dry-run/);
+  assert.match(workerCheckScript, /--config/);
+  assert.match(workerCheckScript, /worker\/wrangler\.toml/);
+  assert.match(workerCheckScript, /WRANGLER_SEND_METRICS/);
+  assert.match(packageJson.scripts?.verify || '', /npm run check:worker/);
+  assert.match(workflow, /npm run verify/);
+});
+
 test('pull request template asks for summary and test evidence', async () => {
   const template = await readProjectFile('.github/pull_request_template.md');
 
