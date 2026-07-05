@@ -5,6 +5,7 @@
 ## 🌟 如何贡献
 
 ### 报告问题
+- 优先使用 `.github/ISSUE_TEMPLATE/bug_report.md` 中的 Bug report 模板
 - 使用清晰的标题描述问题
 - 提供详细的重现步骤
 - 包含错误截图或日志（如有）
@@ -71,6 +72,7 @@ git push origin feature/your-feature-name
 ```
 
 #### 术语贡献指南
+- 优先使用 `.github/ISSUE_TEMPLATE/terminology.md` 中的 Terminology contribution 模板
 - 确保术语的准确性和权威性
 - 提供多语言对照翻译
 - 添加简短的解释或上下文
@@ -102,29 +104,9 @@ git push origin feature/your-feature-name
 - [ ] 提交信息清晰明了
 - [ ] 没有引入新的console.log或调试代码
 
-### Pull Request 模板
-```
-## 变更类型
-- [ ] 新功能 (feature)
-- [ ] Bug修复 (bugfix)
-- [ ] 文档更新 (docs)
-- [ ] 样式优化 (style)
-- [ ] 代码重构 (refactor)
-- [ ] 性能优化 (perf)
-- [ ] 测试相关 (test)
-
-## 变更描述
-简要描述您的更改...
-
-## 测试
-描述您如何测试了这些更改...
-
-## 相关Issue
-如果相关，请链接到相关的issue...
-
-## 截图（如适用）
-添加截图来帮助解释您的更改...
-```
+### 模板位置
+请使用 `.github/pull_request_template.md` 中维护的 Pull Request 模板，并在
+Test Plan 中保留实际运行过的验证命令。
 
 ## 🤝 社区行为准则
 
@@ -146,7 +128,6 @@ git push origin feature/your-feature-name
 
 - **GitHub Issues**: [提交问题](https://github.com/xr843/Buddhist-AI-Translator/issues)
 - **Discussions**: [参与讨论](https://github.com/xr843/Buddhist-AI-Translator/discussions)
-- **Email**: （如果您希望添加邮箱联系方式）
 
 ## 🙏 致谢
 
