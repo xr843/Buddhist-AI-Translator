@@ -20,6 +20,17 @@ test('GitHub Actions verify workflow runs npm verification on PRs and master pus
   assert.equal(packageJson.engines?.node, '>=22');
 });
 
+test('syntax verification uses the repository discovery script', async () => {
+  const packageJson = JSON.parse(await readProjectFile('package.json'));
+  const syntaxScript = await readProjectFile('scripts/check-syntax.mjs');
+
+  assert.equal(packageJson.scripts?.['check:syntax'], 'node scripts/check-syntax.mjs');
+  assert.match(syntaxScript, /src/);
+  assert.match(syntaxScript, /worker/);
+  assert.match(syntaxScript, /scripts/);
+  assert.match(syntaxScript, /--check/);
+});
+
 test('pull request template asks for summary and test evidence', async () => {
   const template = await readProjectFile('.github/pull_request_template.md');
 
