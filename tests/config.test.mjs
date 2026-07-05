@@ -21,6 +21,26 @@ test('config falls back to an empty API key when localStorage is unavailable', a
     assert.equal(config.API_CONFIG.apiKey, '');
 });
 
+test('config normalizes stored API keys from localStorage', async (t) => {
+    const originalLocalStorage = globalThis.localStorage;
+    globalThis.localStorage = {
+        getItem() {
+            return '  sk-persisted\n';
+        }
+    };
+    t.after(() => {
+        if (originalLocalStorage === undefined) {
+            delete globalThis.localStorage;
+        } else {
+            globalThis.localStorage = originalLocalStorage;
+        }
+    });
+
+    const config = await import(`../src/config.js?storage-trim=${Date.now()}`);
+
+    assert.equal(config.API_CONFIG.apiKey, 'sk-persisted');
+});
+
 test('storeApiKey reports storage failures while updating the in-memory key', async (t) => {
     const originalLocalStorage = globalThis.localStorage;
     const writes = [];
@@ -45,6 +65,33 @@ test('storeApiKey reports storage failures while updating the in-memory key', as
     const stored = config.storeApiKey('sk-current-session');
 
     assert.equal(stored, false);
+    assert.deepEqual(writes, [['deepseek_api_key', 'sk-current-session']]);
+    assert.equal(config.API_CONFIG.apiKey, 'sk-current-session');
+});
+
+test('storeApiKey trims keys before persistence and in-memory use', async (t) => {
+    const originalLocalStorage = globalThis.localStorage;
+    const writes = [];
+    globalThis.localStorage = {
+        getItem() {
+            return '';
+        },
+        setItem(key, value) {
+            writes.push([key, value]);
+        }
+    };
+    t.after(() => {
+        if (originalLocalStorage === undefined) {
+            delete globalThis.localStorage;
+        } else {
+            globalThis.localStorage = originalLocalStorage;
+        }
+    });
+
+    const config = await import(`../src/config.js?storage-save-trim=${Date.now()}`);
+    const stored = config.storeApiKey('  sk-current-session\n');
+
+    assert.equal(stored, true);
     assert.deepEqual(writes, [['deepseek_api_key', 'sk-current-session']]);
     assert.equal(config.API_CONFIG.apiKey, 'sk-current-session');
 });
