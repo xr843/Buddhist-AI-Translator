@@ -42,7 +42,26 @@ wrangler kv namespace create RATE_LIMIT_KV
 面向公网或多人共享的部署必须绑定 `RATE_LIMIT_KV`。未绑定 KV 时 Worker
 会放行请求，适合个人临时测试，但不适合公开共享的代理服务。
 
-### 6. 前端配置
+### 6. 配置允许的前端来源
+
+Worker 默认只允许项目的 GitHub Pages 站点：
+
+```text
+https://xr843.github.io
+```
+
+如果你使用自定义域名，或本地开发需要从 `http://127.0.0.1:8000` 调用
+Worker，请在 `worker/wrangler.toml` 的 `[vars]` 中显式配置
+`ALLOWED_ORIGINS`。多个 origin 可用逗号或空白分隔：
+
+```toml
+[vars]
+ALLOWED_ORIGINS = "https://xr843.github.io http://127.0.0.1:8000"
+```
+
+只添加你实际使用的前端 origin，不要添加通配域名。
+
+### 7. 前端配置
 
 在 `src/config.js` 中设置 `proxyURL`：
 
@@ -87,8 +106,8 @@ connect-src 'self' https://api.deepseek.com https://buddhist-translator-api.<you
 ## 安全特性
 
 - API 密钥仅存储在 Cloudflare Secrets，不会暴露给前端
-- CORS 白名单限制，只允许指定域名调用
-- 本地测试默认允许 `http://localhost:8000` 与 `http://127.0.0.1:8000`
+- CORS 白名单限制，只允许默认站点和 `ALLOWED_ORIGINS` 显式配置的来源调用
+- 本地开发来源需显式配置，例如 `http://127.0.0.1:8000`
 - Worker 服务端构造 DeepSeek prompt，不信任客户端 prompt 字段
 - Worker 校验 `sourceLang` 和 `targetLang`，拒绝未知语言代码
 - 请求体大小和文本长度限制

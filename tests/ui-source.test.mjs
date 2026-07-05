@@ -230,6 +230,15 @@ test('worker README documents translate request limits', async () => {
     assert.match(source, /413/);
 });
 
+test('worker README documents explicit CORS origin configuration', async () => {
+    const source = await readSource('worker/README.md');
+
+    assert.match(source, /ALLOWED_ORIGINS/);
+    assert.match(source, /https:\/\/xr843\.github\.io/);
+    assert.match(source, /http:\/\/127\.0\.0\.1:8000/);
+    assert.match(source, /本地[^。\n]+显式配置|显式配置[^。\n]+本地/);
+});
+
 test('CONTRIBUTING points terminology updates at src/terms.json', async () => {
     const source = await readSource('CONTRIBUTING.md');
 
