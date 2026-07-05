@@ -30,6 +30,14 @@ export function storeApiKey(apiKey) {
     }
 }
 
+export function getProxyURL() {
+    return String(API_CONFIG.proxyURL || '').trim().replace(/\/+$/, '');
+}
+
+export function hasProxyURL() {
+    return getProxyURL().length > 0;
+}
+
 // 翻译缓存
 export const translationCache = new Map();
 export const MAX_CACHE_SIZE = 100;

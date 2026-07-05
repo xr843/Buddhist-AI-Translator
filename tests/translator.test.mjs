@@ -182,6 +182,34 @@ test('translateWithDeepSeek normalizes proxy URLs before calling translate', asy
   assert.equal(requestedUrl, 'https://translator-worker.example/translate');
 });
 
+test('translateWithDeepSeek treats blank proxy URLs as unconfigured', async (t) => {
+  const originalFetch = globalThis.fetch;
+  const originalApiKey = API_CONFIG.apiKey;
+  const originalProxyURL = API_CONFIG.proxyURL;
+  let calls = 0;
+
+  API_CONFIG.apiKey = '';
+  API_CONFIG.proxyURL = '   ';
+  translationCache.clear();
+  globalThis.fetch = async () => {
+    calls += 1;
+    throw new Error('fetch should not be called for blank proxy URLs');
+  };
+
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+    API_CONFIG.apiKey = originalApiKey;
+    API_CONFIG.proxyURL = originalProxyURL;
+    translationCache.clear();
+  });
+
+  await assert.rejects(
+    translator.translateWithDeepSeek('诸行无常', 'zh-classical', 'en'),
+    /API密钥未配置/
+  );
+  assert.equal(calls, 0);
+});
+
 test('translateWithDeepSeek classifies malformed successful JSON responses', async (t) => {
   const originalFetch = globalThis.fetch;
   const originalProxyURL = API_CONFIG.proxyURL;

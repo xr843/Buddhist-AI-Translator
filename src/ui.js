@@ -1,4 +1,4 @@
-import { API_CONFIG, languageMap, storeApiKey } from './config.js';
+import { API_CONFIG, languageMap, storeApiKey, hasProxyURL } from './config.js';
 import { escapeHtml, limitTextLength, validateInput, showMessage } from './utils.js';
 import { describeTranslationError, translateWithDeepSeek, translateWithBuiltIn, hasCachedTranslation } from './translator.js';
 import { initSpeech, startVoiceInput, speakResult } from './speech.js';
@@ -293,7 +293,7 @@ function checkApiKeyStatus() {
     const apiConfigBtn = document.getElementById('api-settings-btn');
     const apiStatusText = document.getElementById('api-status-text');
     const apiStatusIndicator = document.getElementById('api-status-indicator');
-    const useProxy = !!API_CONFIG.proxyURL;
+    const useProxy = hasProxyURL();
 
     if (useProxy || API_CONFIG.apiKey) {
         apiConfigBtn.classList.add('configured');
