@@ -281,6 +281,38 @@ test('text longer than 5000 characters returns 400', async (t) => {
     assert.match(body.error, /5000/);
 });
 
+test('oversized translate request bodies return 413 without calling fetch', async (t) => {
+    const originalFetch = globalThis.fetch;
+    let calls = 0;
+    globalThis.fetch = async () => {
+        calls += 1;
+        throw new Error('DeepSeek should not be called for oversized request bodies');
+    };
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+
+    const body = JSON.stringify({
+        text: 'sabbe sankhara anicca',
+        sourceLang: 'pi',
+        targetLang: 'en',
+        padding: 'x'.repeat(70_000)
+    });
+    const response = await worker.fetch(new Request('https://translator-worker.example/translate', {
+        method: 'POST',
+        headers: {
+            Origin: ALLOWED_ORIGIN,
+            'Content-Type': 'application/json',
+            'Content-Length': String(body.length)
+        },
+        body
+    }), { DEEPSEEK_API_KEY: 'test-key' });
+
+    assert.equal(response.status, 413);
+    assert.equal(calls, 0);
+    assert.match((await json(response)).error, /请求体过大/);
+});
+
 test('unsupported language codes return 400 without calling fetch', async (t) => {
     const originalFetch = globalThis.fetch;
     let calls = 0;

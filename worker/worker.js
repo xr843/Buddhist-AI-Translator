@@ -29,6 +29,7 @@ const ALLOWED_ORIGINS = [
 // 速率限制配置（基于 IP，每分钟最大请求数）
 const RATE_LIMIT_PER_MINUTE = 30;
 const DEEPSEEK_UPSTREAM_TIMEOUT_MS = 30000;
+const MAX_REQUEST_BODY_BYTES = 64 * 1024;
 
 export default {
     async fetch(request, env) {
@@ -79,6 +80,9 @@ async function handleTranslate(request, env, origin) {
     const contentType = request.headers.get('Content-Type') || '';
     if (!isJsonContentType(contentType)) {
         return jsonResponse({ error: 'Content-Type 必须为 application/json' }, origin, 415);
+    }
+    if (isRequestBodyTooLarge(request)) {
+        return jsonResponse({ error: '请求体过大' }, origin, 413);
     }
 
     // 检查 API 密钥是否已配置
@@ -217,6 +221,11 @@ function isSupportedLanguage(language) {
 
 function isJsonContentType(contentType) {
     return contentType.split(';', 1)[0].trim().toLowerCase() === 'application/json';
+}
+
+function isRequestBodyTooLarge(request) {
+    const contentLength = Number(request.headers.get('Content-Length'));
+    return Number.isFinite(contentLength) && contentLength > MAX_REQUEST_BODY_BYTES;
 }
 
 function createTranslationPrompt(text, sourceLang, targetLang) {
