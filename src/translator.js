@@ -89,6 +89,28 @@ export function buildProxyPayload(text, sourceLang, targetLang) {
     return { text, sourceLang, targetLang };
 }
 
+export function describeTranslationError(error) {
+    const message = error?.message || String(error || '');
+
+    if (/API密钥未配置/.test(message)) {
+        return '请先配置 DeepSeek API 密钥，或启用 Worker 代理。';
+    }
+    if (/API请求失败:\s*(?:401|403)\b/.test(message)) {
+        return 'DeepSeek API 密钥无效，请检查后重新保存。';
+    }
+    if (/API请求失败:\s*429\b/.test(message)) {
+        return 'DeepSeek 请求过于频繁或额度不足，请稍后重试。';
+    }
+    if (/超时/.test(message)) {
+        return '翻译请求超时，请稍后重试。';
+    }
+    if (/API请求失败:\s*5\d\d\b|DeepSeek API 错误:\s*5\d\d\b|代理请求失败/.test(message)) {
+        return 'DeepSeek 服务暂时不可用，请稍后重试。';
+    }
+
+    return 'AI 翻译暂时不可用，已使用内置模式。';
+}
+
 // DeepSeek API 翻译（支持直连和代理模式）
 export async function translateWithDeepSeek(text, sourceLang, targetLang) {
     const useProxy = !!API_CONFIG.proxyURL;

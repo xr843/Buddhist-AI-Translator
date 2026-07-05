@@ -1,6 +1,6 @@
 import { API_CONFIG, languageMap, storeApiKey } from './config.js';
 import { escapeHtml, limitTextLength, validateInput, showMessage } from './utils.js';
-import { translateWithDeepSeek, translateWithBuiltIn, hasCachedTranslation } from './translator.js';
+import { describeTranslationError, translateWithDeepSeek, translateWithBuiltIn, hasCachedTranslation } from './translator.js';
 import { initSpeech, startVoiceInput, speakResult, stopSpeaking, isSpeaking } from './speech.js';
 
 // DOM 元素
@@ -114,7 +114,7 @@ async function handleTranslate() {
             console.log('API翻译失败，使用内置翻译:', apiError.message);
             const result = translateWithBuiltIn(sourceText, sourceLang, targetLang);
             resultDiv.innerHTML = `<div class="translation-text">${escapeHtml(result)}</div>`;
-            showMessage('API暂时不可用，使用内置翻译', 'warning');
+            showMessage(describeTranslationError(apiError), 'warning');
         }
     } catch (error) {
         console.error('翻译错误:', error);
