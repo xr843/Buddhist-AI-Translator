@@ -134,6 +134,35 @@ test('invalid or missing text returns 400', async (t) => {
     assert.equal(calls, 0);
 });
 
+test('non-JSON translate requests return 415 without calling fetch', async (t) => {
+    const originalFetch = globalThis.fetch;
+    let calls = 0;
+    globalThis.fetch = async () => {
+        calls += 1;
+        throw new Error('DeepSeek should not be called for non-JSON requests');
+    };
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+
+    const response = await worker.fetch(new Request('https://translator-worker.example/translate', {
+        method: 'POST',
+        headers: {
+            Origin: ALLOWED_ORIGIN,
+            'Content-Type': 'text/plain'
+        },
+        body: JSON.stringify({
+            text: 'sabbe sankhara anicca',
+            sourceLang: 'pi',
+            targetLang: 'en'
+        })
+    }), { DEEPSEEK_API_KEY: 'test-key' });
+
+    assert.equal(response.status, 415);
+    assert.equal(calls, 0);
+    assert.match((await json(response)).error, /Content-Type/);
+});
+
 test('text longer than 5000 characters returns 400', async (t) => {
     const originalFetch = globalThis.fetch;
     let calls = 0;
