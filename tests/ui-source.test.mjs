@@ -99,6 +99,18 @@ test('src/ui.js warns when falling back from API translation', async () => {
     assert.doesNotMatch(source, /console\.log\(['"]API翻译失败，使用内置翻译:/);
 });
 
+test('src/ui.js rejects text that becomes empty after input sanitization', async () => {
+    const source = await readSource('src/ui.js');
+    const normalized = compact(source);
+
+    assert.match(normalized, /constsourceText=validateInput\(rawText\)/);
+    assert.match(normalized, /if\(!sourceText\){showMessage\(['"]请输入有效的翻译文本['"],['"]warning['"]\);return;}/);
+    assert.match(
+        normalized,
+        /constsourceText=validateInput\(rawText\)[\s\S]*if\(!sourceText\)[\s\S]*constsourceLang=sourceSelect\.value/
+    );
+});
+
 test('styles.css keeps the fixed footer from covering translator content', async () => {
     const source = await readSource('styles.css');
 

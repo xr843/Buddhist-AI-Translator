@@ -89,6 +89,10 @@ async function handleTranslate() {
     if (sourceText !== rawText) {
         showMessage('检测到不安全内容，已自动清理', 'warning');
     }
+    if (!sourceText) {
+        showMessage('请输入有效的翻译文本', 'warning');
+        return;
+    }
 
     const sourceLang = sourceSelect.value;
     const targetLang = targetSelect.value;
