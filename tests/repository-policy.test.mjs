@@ -79,3 +79,13 @@ test('CONTRIBUTING does not link to disabled repository features', async () => {
   assert.doesNotMatch(contributing, /\/discussions\b/);
   assert.doesNotMatch(contributing, /Discussions/);
 });
+
+test('repository documents the release process for the package version', async () => {
+  const packageJson = JSON.parse(await readProjectFile('package.json'));
+  const releaseDoc = await readProjectFile('RELEASE.md');
+
+  assert.match(releaseDoc, new RegExp(`Current version:\\s*${packageJson.version}`));
+  assert.match(releaseDoc, /npm run verify/);
+  assert.match(releaseDoc, /git tag v/);
+  assert.match(releaseDoc, /gh release create/);
+});
