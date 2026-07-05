@@ -57,9 +57,11 @@ python3 -m http.server 8000
 
 **本地验证**:
 ```bash
+npm install
+npx playwright install chromium
 npm run verify
 ```
-需要 Node.js 22 或更高版本。
+需要 Node.js 22 或更高版本。`npm run verify` 会执行语法检查、Worker dry-run、术语校验、真实浏览器 smoke 测试和 Node 测试。
 
 ### 键盘快捷键
 
@@ -133,9 +135,11 @@ python3 -m http.server 8000
 
 **Local Verification**:
 ```bash
+npm install
+npx playwright install chromium
 npm run verify
 ```
-Requires Node.js 22 or newer.
+Requires Node.js 22 or newer. `npm run verify` runs syntax checks, the Worker dry-run, terms validation, a real browser smoke check, and Node tests.
 
 ### Keyboard Shortcuts
 
