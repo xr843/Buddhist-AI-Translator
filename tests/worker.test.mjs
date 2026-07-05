@@ -352,6 +352,29 @@ test('upstream API errors do not expose provider error messages', async (t) => {
     assert.equal((await json(response)).error, 'DeepSeek API 错误: 401');
 });
 
+test('malformed successful upstream JSON returns API format error', async (t) => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async () => new Response('not json', {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+    });
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+
+    const response = await worker.fetch(request('/translate', {
+        method: 'POST',
+        body: {
+            text: 'sabbe sankhara anicca',
+            sourceLang: 'pi',
+            targetLang: 'en'
+        }
+    }), { DEEPSEEK_API_KEY: 'test-key' });
+
+    assert.equal(response.status, 502);
+    assert.equal((await json(response)).error, 'API 返回数据格式异常');
+});
+
 test('successful translate builds the DeepSeek prompt from text and languages server-side', async (t) => {
     const originalFetch = globalThis.fetch;
     let outboundRequest;
