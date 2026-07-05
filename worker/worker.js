@@ -28,6 +28,7 @@ const ALLOWED_ORIGINS = [
 
 // 速率限制配置（基于 IP，每分钟最大请求数）
 const RATE_LIMIT_PER_MINUTE = 30;
+const DEEPSEEK_UPSTREAM_TIMEOUT_MS = 30000;
 
 export default {
     async fetch(request, env) {
@@ -105,10 +106,15 @@ async function handleTranslate(request, env, origin) {
     }
 
     const prompt = createTranslationPrompt(text, sourceLang, targetLang);
+    const upstreamAbortController = new AbortController();
+    const upstreamTimeout = setTimeout(() => {
+        upstreamAbortController.abort();
+    }, DEEPSEEK_UPSTREAM_TIMEOUT_MS);
 
     try {
         const deepseekResponse = await fetch('https://api.deepseek.com/v1/chat/completions', {
             method: 'POST',
+            signal: upstreamAbortController.signal,
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${env.DEEPSEEK_API_KEY}`
@@ -150,6 +156,8 @@ async function handleTranslate(request, env, origin) {
 
     } catch (error) {
         return jsonResponse({ error: '代理请求失败: ' + error.message }, origin, 502);
+    } finally {
+        clearTimeout(upstreamTimeout);
     }
 }
 
