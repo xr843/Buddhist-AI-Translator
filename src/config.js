@@ -1,6 +1,6 @@
 function readStoredApiKey() {
     try {
-        return localStorage.getItem('deepseek_api_key') || '';
+        return (localStorage.getItem('deepseek_api_key') || '').trim();
     } catch {
         return '';
     }
@@ -19,10 +19,11 @@ export const API_CONFIG = {
 export { languageMap } from './languages.js';
 
 export function storeApiKey(apiKey) {
-    API_CONFIG.apiKey = apiKey;
+    const normalizedApiKey = typeof apiKey === 'string' ? apiKey.trim() : '';
+    API_CONFIG.apiKey = normalizedApiKey;
 
     try {
-        localStorage.setItem('deepseek_api_key', apiKey);
+        localStorage.setItem('deepseek_api_key', normalizedApiKey);
         return true;
     } catch {
         return false;
