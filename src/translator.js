@@ -101,6 +101,10 @@ export function buildProxyPayload(text, sourceLang, targetLang) {
     return { text, sourceLang, targetLang };
 }
 
+function buildProxyTranslateURL(proxyURL) {
+    return `${String(proxyURL || '').trim().replace(/\/+$/, '')}/translate`;
+}
+
 export function describeTranslationError(error) {
     const message = error?.message || String(error || '');
 
@@ -149,7 +153,7 @@ export async function translateWithDeepSeek(text, sourceLang, targetLang) {
 
         if (useProxy) {
             // 代理模式：密钥存在服务端，前端只发翻译请求
-            response = await fetch(`${API_CONFIG.proxyURL}/translate`, {
+            response = await fetch(buildProxyTranslateURL(API_CONFIG.proxyURL), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(buildProxyPayload(text, sourceLang, targetLang)),
