@@ -156,8 +156,8 @@ async function handleTranslate(request, env, origin) {
             usage: data.usage || null
         }, origin);
 
-    } catch (error) {
-        return jsonResponse({ error: '代理请求失败: ' + error.message }, origin, 502);
+    } catch {
+        return jsonResponse({ error: '代理请求失败' }, origin, 502);
     } finally {
         clearTimeout(upstreamTimeout);
     }

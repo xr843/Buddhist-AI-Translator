@@ -228,6 +228,28 @@ test('rate-limited translate responses include Retry-After', async (t) => {
     assert.match((await json(response)).error, /30 秒后重试/);
 });
 
+test('upstream fetch failures do not expose internal error details', async (t) => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async () => {
+        throw new Error('connect ECONNRESET with secret sk-internal-test-token');
+    };
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+
+    const response = await worker.fetch(request('/translate', {
+        method: 'POST',
+        body: {
+            text: 'sabbe sankhara anicca',
+            sourceLang: 'pi',
+            targetLang: 'en'
+        }
+    }), { DEEPSEEK_API_KEY: 'test-key' });
+
+    assert.equal(response.status, 502);
+    assert.equal((await json(response)).error, '代理请求失败');
+});
+
 test('successful translate builds the DeepSeek prompt from text and languages server-side', async (t) => {
     const originalFetch = globalThis.fetch;
     let outboundRequest;
