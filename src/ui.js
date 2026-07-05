@@ -1,7 +1,7 @@
 import { API_CONFIG, languageMap, storeApiKey } from './config.js';
 import { escapeHtml, limitTextLength, validateInput, showMessage } from './utils.js';
 import { describeTranslationError, translateWithDeepSeek, translateWithBuiltIn, hasCachedTranslation } from './translator.js';
-import { initSpeech, startVoiceInput, speakResult, stopSpeaking, isSpeaking } from './speech.js';
+import { initSpeech, startVoiceInput, speakResult } from './speech.js';
 
 // DOM 元素
 let sourceTextArea, targetSelect, sourceSelect, translateBtn, resultDiv, charCount;
@@ -21,7 +21,8 @@ export function initializeUI() {
     // 初始化语音模块
     initSpeech(
         () => targetSelect.value,
-        () => resultDiv
+        () => resultDiv,
+        updateSpeakerButton
     );
 
     bindEvents();
@@ -224,9 +225,20 @@ function handleSpeak() {
     } else if (result.error === 'no-content') {
         showMessage('没有可朗读的内容', 'warning');
     } else if (result.action === 'started') {
+        updateSpeakerButton(true);
+    } else if (result.action === 'stopped') {
+        updateSpeakerButton(false);
+    }
+}
+
+function updateSpeakerButton(speaking) {
+    const speakerBtn = document.getElementById('speaker-btn');
+    if (!speakerBtn) return;
+
+    if (speaking) {
         speakerBtn.innerHTML = '<i class="fas fa-stop"></i>';
         speakerBtn.title = '停止朗读';
-    } else if (result.action === 'stopped') {
+    } else {
         speakerBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
         speakerBtn.title = '朗读';
     }
