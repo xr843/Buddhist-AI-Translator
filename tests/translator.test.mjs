@@ -277,7 +277,11 @@ test('describeTranslationError maps API failures to actionable UI messages', () 
   );
   assert.equal(
     translator.describeTranslationError(new Error('network failed')),
-    'AI 翻译暂时不可用，已使用内置模式。'
+    '网络连接失败，请检查网络或 Worker 代理配置。'
+  );
+  assert.equal(
+    translator.describeTranslationError(new TypeError('Failed to fetch')),
+    '网络连接失败，请检查网络或 Worker 代理配置。'
   );
 });
 
