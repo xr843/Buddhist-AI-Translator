@@ -113,6 +113,31 @@ test('missing DEEPSEEK_API_KEY returns 500 JSON without calling fetch', async (t
     assert.match(body.error, /API/);
 });
 
+test('blank DEEPSEEK_API_KEY returns 500 JSON without calling fetch', async (t) => {
+    const originalFetch = globalThis.fetch;
+    let calls = 0;
+    globalThis.fetch = async () => {
+        calls += 1;
+        throw new Error('DeepSeek should not be called with a blank API key');
+    };
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+
+    const response = await worker.fetch(request('/translate', {
+        method: 'POST',
+        body: {
+            text: 'sabbe sankhara anicca',
+            sourceLang: 'pi',
+            targetLang: 'en'
+        }
+    }), { DEEPSEEK_API_KEY: '   \n' });
+
+    assert.equal(response.status, 500);
+    assert.equal(calls, 0);
+    assert.match((await json(response)).error, /API/);
+});
+
 test('missing Worker env returns 500 JSON without throwing or calling fetch', async (t) => {
     const originalFetch = globalThis.fetch;
     let calls = 0;
@@ -665,4 +690,33 @@ test('hanging DeepSeek requests are aborted and return 502 JSON', async (t) => {
 
     const body = await json(response);
     assert.match(body.error, /代理请求失败/);
+});
+
+test('Worker trims DEEPSEEK_API_KEY before sending Authorization', async (t) => {
+    const originalFetch = globalThis.fetch;
+    let authorization;
+    globalThis.fetch = async (_url, init) => {
+        authorization = init.headers.Authorization;
+        return new Response(JSON.stringify({
+            choices: [{ message: { content: 'All conditioned things are impermanent.' } }]
+        }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+        });
+    };
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+
+    const response = await worker.fetch(request('/translate', {
+        method: 'POST',
+        body: {
+            text: 'sabbe sankhara anicca',
+            sourceLang: 'pi',
+            targetLang: 'en'
+        }
+    }), { DEEPSEEK_API_KEY: ' test-key\n' });
+
+    assert.equal(response.status, 200);
+    assert.equal(authorization, 'Bearer test-key');
 });
