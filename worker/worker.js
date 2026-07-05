@@ -77,7 +77,7 @@ export default {
 
 async function handleTranslate(request, env, origin) {
     const contentType = request.headers.get('Content-Type') || '';
-    if (!contentType.toLowerCase().includes('application/json')) {
+    if (!isJsonContentType(contentType)) {
         return jsonResponse({ error: 'Content-Type 必须为 application/json' }, origin, 415);
     }
 
@@ -213,6 +213,10 @@ function validateLanguages(sourceLang, targetLang) {
 
 function isSupportedLanguage(language) {
     return typeof language === 'string' && Object.hasOwn(languageMap, language);
+}
+
+function isJsonContentType(contentType) {
+    return contentType.split(';', 1)[0].trim().toLowerCase() === 'application/json';
 }
 
 function createTranslationPrompt(text, sourceLang, targetLang) {

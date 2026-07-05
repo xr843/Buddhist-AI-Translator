@@ -174,6 +174,35 @@ test('non-JSON translate requests return 415 without calling fetch', async (t) =
     assert.match((await json(response)).error, /Content-Type/);
 });
 
+test('translate rejects content types that only mention JSON in parameters', async (t) => {
+    const originalFetch = globalThis.fetch;
+    let calls = 0;
+    globalThis.fetch = async () => {
+        calls += 1;
+        throw new Error('DeepSeek should not be called for invalid JSON media types');
+    };
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+
+    const response = await worker.fetch(new Request('https://translator-worker.example/translate', {
+        method: 'POST',
+        headers: {
+            Origin: ALLOWED_ORIGIN,
+            'Content-Type': 'text/plain; charset=utf-8; format=application/json'
+        },
+        body: JSON.stringify({
+            text: 'sabbe sankhara anicca',
+            sourceLang: 'pi',
+            targetLang: 'en'
+        })
+    }), { DEEPSEEK_API_KEY: 'test-key' });
+
+    assert.equal(response.status, 415);
+    assert.equal(calls, 0);
+    assert.match((await json(response)).error, /Content-Type/);
+});
+
 test('translate rejects non-object JSON bodies without calling fetch', async (t) => {
     const originalFetch = globalThis.fetch;
     let calls = 0;
