@@ -1,9 +1,13 @@
 // HTML 转义，防止 XSS
 export function escapeHtml(text) {
     if (!text || typeof text !== 'string') return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    return text.replace(/[&<>"']/g, char => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    })[char]);
 }
 
 // 输入安全验证
