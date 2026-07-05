@@ -290,7 +290,9 @@ async function checkRateLimit(env, clientIP) {
 
     try {
         const existing = await env.RATE_LIMIT_KV.get(key, { type: 'json' });
-        const requests = existing ? existing.filter(ts => ts > windowStart) : [];
+        const requests = Array.isArray(existing)
+            ? existing.filter(ts => Number.isFinite(ts) && ts > windowStart)
+            : [];
 
         if (requests.length >= RATE_LIMIT_PER_MINUTE) {
             const oldestInWindow = Math.min(...requests);

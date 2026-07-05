@@ -360,6 +360,52 @@ test('rate-limited translate responses include Retry-After', async (t) => {
     assert.match((await json(response)).error, /30 秒后重试/);
 });
 
+test('malformed rate limit KV entries are reset without disabling rate limiting', async (t) => {
+    const originalFetch = globalThis.fetch;
+    const originalDateNow = Date.now;
+    let storedValue;
+
+    globalThis.fetch = async () => new Response(JSON.stringify({
+        choices: [{ message: { content: 'All conditioned things are impermanent.' } }]
+    }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+    });
+    Date.now = () => 120_000;
+
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+        Date.now = originalDateNow;
+    });
+
+    const env = {
+        DEEPSEEK_API_KEY: 'test-key',
+        RATE_LIMIT_KV: {
+            async get() {
+                return { malformed: true };
+            },
+            async put(key, value, options) {
+                assert.equal(key, 'rate:unknown');
+                assert.deepEqual(options, { expirationTtl: 120 });
+                storedValue = JSON.parse(value);
+            }
+        }
+    };
+
+    const response = await worker.fetch(request('/translate', {
+        method: 'POST',
+        body: {
+            text: 'sabbe sankhara anicca',
+            sourceLang: 'pi',
+            targetLang: 'en'
+        }
+    }), env);
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(storedValue, [120]);
+    assert.equal((await json(response)).translation, 'All conditioned things are impermanent.');
+});
+
 test('upstream fetch failures do not expose internal error details', async (t) => {
     const originalFetch = globalThis.fetch;
     globalThis.fetch = async () => {
