@@ -102,9 +102,20 @@ async function handleTranslate(request, env, origin) {
         );
     }
 
+    let rawBody;
+    try {
+        rawBody = await request.text();
+    } catch {
+        return jsonResponse({ error: '请求体格式错误' }, origin, 400);
+    }
+
+    if (new TextEncoder().encode(rawBody).length > MAX_REQUEST_BODY_BYTES) {
+        return jsonResponse({ error: '请求体过大' }, origin, 413);
+    }
+
     let body;
     try {
-        body = await request.json();
+        body = JSON.parse(rawBody);
     } catch {
         return jsonResponse({ error: '请求体格式错误' }, origin, 400);
     }
