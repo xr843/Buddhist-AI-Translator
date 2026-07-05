@@ -134,6 +134,14 @@ async function handleTranslate(request, env, origin) {
     // 只对通过基础校验、即将调用上游的请求消耗速率限制配额。
     const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
     const rateLimitResult = await checkRateLimit(env, clientIP);
+    if (rateLimitResult.unavailable) {
+        return jsonResponse(
+            { error: '速率限制服务暂时不可用，请稍后重试' },
+            origin,
+            503,
+            { 'Retry-After': String(rateLimitResult.retryAfter) }
+        );
+    }
     if (!rateLimitResult.allowed) {
         return jsonResponse(
             { error: `请求过于频繁，请 ${rateLimitResult.retryAfter} 秒后重试` },
@@ -328,7 +336,6 @@ async function checkRateLimit(env, clientIP) {
         await env.RATE_LIMIT_KV.put(key, JSON.stringify(requests), { expirationTtl: 120 });
         return { allowed: true };
     } catch {
-        // KV 操作失败时放行
-        return { allowed: true };
+        return { allowed: false, unavailable: true, retryAfter: 60 };
     }
 }

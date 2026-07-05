@@ -509,6 +509,80 @@ test('rate-limited translate responses include Retry-After', async (t) => {
     assert.match((await json(response)).error, /30 秒后重试/);
 });
 
+test('bound rate limit KV read failures fail closed without calling upstream', async (t) => {
+    const originalFetch = globalThis.fetch;
+    let calls = 0;
+
+    globalThis.fetch = async () => {
+        calls += 1;
+        throw new Error('DeepSeek should not be called when rate-limit KV fails');
+    };
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+
+    const response = await worker.fetch(request('/translate', {
+        method: 'POST',
+        body: {
+            text: 'sabbe sankhara anicca',
+            sourceLang: 'pi',
+            targetLang: 'en'
+        }
+    }), {
+        DEEPSEEK_API_KEY: 'test-key',
+        RATE_LIMIT_KV: {
+            async get() {
+                throw new Error('KV unavailable');
+            },
+            async put() {
+                throw new Error('put should not be called after get failure');
+            }
+        }
+    });
+
+    assert.equal(response.status, 503);
+    assert.equal(response.headers.get('Retry-After'), '60');
+    assert.equal(calls, 0);
+    assert.match((await json(response)).error, /速率限制服务暂时不可用/);
+});
+
+test('bound rate limit KV write failures fail closed without calling upstream', async (t) => {
+    const originalFetch = globalThis.fetch;
+    let calls = 0;
+
+    globalThis.fetch = async () => {
+        calls += 1;
+        throw new Error('DeepSeek should not be called when rate-limit KV fails');
+    };
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+
+    const response = await worker.fetch(request('/translate', {
+        method: 'POST',
+        body: {
+            text: 'sabbe sankhara anicca',
+            sourceLang: 'pi',
+            targetLang: 'en'
+        }
+    }), {
+        DEEPSEEK_API_KEY: 'test-key',
+        RATE_LIMIT_KV: {
+            async get() {
+                return [];
+            },
+            async put() {
+                throw new Error('KV write unavailable');
+            }
+        }
+    });
+
+    assert.equal(response.status, 503);
+    assert.equal(response.headers.get('Retry-After'), '60');
+    assert.equal(calls, 0);
+    assert.match((await json(response)).error, /速率限制服务暂时不可用/);
+});
+
 test('malformed rate limit KV entries are reset without disabling rate limiting', async (t) => {
     const originalFetch = globalThis.fetch;
     const originalDateNow = Date.now;
