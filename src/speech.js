@@ -13,10 +13,12 @@ let currentSegmentIndex = 0;
 // 获取目标语言元素的引用（延迟绑定）
 let getTargetLang = () => 'zh';
 let getResultDiv = () => null;
+let onSpeakingStateChange = () => {};
 
-export function initSpeech(targetLangGetter, resultDivGetter) {
+export function initSpeech(targetLangGetter, resultDivGetter, speakingStateChangeHandler = () => {}) {
     getTargetLang = targetLangGetter;
     getResultDiv = resultDivGetter;
+    onSpeakingStateChange = speakingStateChangeHandler;
 
     // 语音识别
     if ('webkitSpeechRecognition' in window) {
@@ -54,8 +56,9 @@ export function speakResult() {
     const resultDiv = getResultDiv();
     if (!synthesis) return { error: 'not-supported' };
 
-    const text = resultDiv.textContent;
-    if (!text || text.includes('翻译结果将显示在这里')) {
+    const rawText = resultDiv?.textContent || '';
+    const text = cleanSpeechText(rawText);
+    if (!text || rawText.includes('翻译结果将显示在这里')) {
         return { error: 'no-content' };
     }
 
@@ -76,16 +79,16 @@ export function speakResult() {
 }
 
 function startSpeaking(text) {
-    const cleanText = text.replace(/^\s*翻译结果：?\s*/, '').trim();
+    const cleanText = cleanSpeechText(text);
 
     selectedVoice = selectBestVoiceForLanguage(getTargetLang());
-    if (!selectedVoice) return;
 
     speakingSegments = segmentTextForSpeech(cleanText);
     if (speakingSegments.length === 0) return;
 
     currentSegmentIndex = 0;
     currentSpeaking = true;
+    onSpeakingStateChange(true);
 
     highlightSpeechSegment(0);
     setTimeout(() => {
@@ -94,6 +97,7 @@ function startSpeaking(text) {
 }
 
 export function stopSpeaking() {
+    const wasSpeaking = currentSpeaking;
     currentSpeaking = false;
     try {
         if (synthesis?.speaking) synthesis.cancel();
@@ -102,6 +106,7 @@ export function stopSpeaking() {
     currentUtterance = null;
     selectedVoice = null;
     clearSpeechHighlight();
+    if (wasSpeaking) onSpeakingStateChange(false);
 }
 
 export function isSpeaking() {
@@ -164,6 +169,10 @@ function speakNextSegment() {
         console.error('启动语音合成失败:', error);
         stopSpeaking();
     }
+}
+
+function cleanSpeechText(text) {
+    return String(text || '').replace(/^\s*翻译结果：?\s*/, '').trim();
 }
 
 // --- 文本分段 ---
