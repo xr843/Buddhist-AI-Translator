@@ -134,6 +134,7 @@ export function describeTranslationError(error) {
 export async function translateWithDeepSeek(text, sourceLang, targetLang) {
     const proxyURL = getProxyURL();
     const useProxy = hasProxyURL();
+    const apiKey = typeof API_CONFIG.apiKey === 'string' ? API_CONFIG.apiKey.trim() : '';
 
     // 检查缓存
     const cacheKey = getCacheKey(text, sourceLang, targetLang);
@@ -141,7 +142,7 @@ export async function translateWithDeepSeek(text, sourceLang, targetLang) {
         return translationCache.get(cacheKey);
     }
 
-    if (!useProxy && !API_CONFIG.apiKey) {
+    if (!useProxy && !apiKey) {
         throw new Error('API密钥未配置');
     }
 
@@ -166,7 +167,7 @@ export async function translateWithDeepSeek(text, sourceLang, targetLang) {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${API_CONFIG.apiKey}`
+                    'Authorization': `Bearer ${apiKey}`
                 },
                 body: JSON.stringify({
                     model: 'deepseek-chat',

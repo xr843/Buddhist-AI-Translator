@@ -263,6 +263,38 @@ test('translateWithDeepSeek rejects direct responses without translation content
   assert.equal(translationCache.size, 0);
 });
 
+test('translateWithDeepSeek trims direct API keys before sending Authorization', async (t) => {
+  const originalFetch = globalThis.fetch;
+  const originalApiKey = API_CONFIG.apiKey;
+  const originalProxyURL = API_CONFIG.proxyURL;
+  let authorization = '';
+
+  API_CONFIG.apiKey = '  sk-test\n';
+  API_CONFIG.proxyURL = '';
+  translationCache.clear();
+  globalThis.fetch = async (_url, init) => {
+    authorization = init.headers.Authorization;
+    return new Response(JSON.stringify({
+      choices: [{ message: { content: 'Impermanence' } }]
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  };
+
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+    API_CONFIG.apiKey = originalApiKey;
+    API_CONFIG.proxyURL = originalProxyURL;
+    translationCache.clear();
+  });
+
+  const result = await translator.translateWithDeepSeek('诸行无常', 'zh-classical', 'en');
+
+  assert.equal(result, 'Impermanence');
+  assert.equal(authorization, 'Bearer sk-test');
+});
+
 test('translateWithDeepSeek returns cached results before requiring API credentials', async (t) => {
   const originalFetch = globalThis.fetch;
   const originalApiKey = API_CONFIG.apiKey;
