@@ -115,14 +115,14 @@ export function describeTranslationError(error) {
 export async function translateWithDeepSeek(text, sourceLang, targetLang) {
     const useProxy = !!API_CONFIG.proxyURL;
 
-    if (!useProxy && !API_CONFIG.apiKey) {
-        throw new Error('API密钥未配置');
-    }
-
     // 检查缓存
     const cacheKey = getCacheKey(text, sourceLang, targetLang);
     if (translationCache.has(cacheKey)) {
         return translationCache.get(cacheKey);
+    }
+
+    if (!useProxy && !API_CONFIG.apiKey) {
+        throw new Error('API密钥未配置');
     }
 
     const prompt = createTranslationPrompt(text, sourceLang, targetLang);
