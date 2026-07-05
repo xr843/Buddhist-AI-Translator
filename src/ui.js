@@ -162,7 +162,13 @@ function clearInput() {
 }
 
 function copyResult() {
-    navigator.clipboard.writeText(resultDiv.textContent).then(() => {
+    const translationText = resultDiv.querySelector('.translation-text');
+    if (!translationText) {
+        showMessage('没有可复制的翻译结果', 'warning');
+        return;
+    }
+
+    navigator.clipboard.writeText(translationText.textContent).then(() => {
         showMessage('复制成功', 'success');
     }).catch(() => {
         showMessage('复制失败，请检查剪贴板权限', 'error');
