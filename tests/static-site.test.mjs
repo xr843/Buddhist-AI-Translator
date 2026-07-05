@@ -138,3 +138,10 @@ test('local verification docs include dependency and browser setup', async () =>
         assert.match(source, /npm run verify/);
     }
 });
+
+test('README documents translation result export', async () => {
+    const readme = await readFile(path.join(repoRoot, 'README.md'), 'utf8');
+
+    assert.match(readme, /导出|下载译文/);
+    assert.match(readme, /export|download/i);
+});

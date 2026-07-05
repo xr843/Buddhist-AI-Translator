@@ -40,6 +40,7 @@ function bindEvents() {
 
     document.getElementById('clear-input').addEventListener('click', clearInput);
     document.getElementById('copy-btn').addEventListener('click', copyResult);
+    document.getElementById('download-btn').addEventListener('click', downloadResult);
     document.getElementById('voice-input').addEventListener('click', handleVoiceInput);
     document.getElementById('speaker-btn').addEventListener('click', handleSpeak);
     document.getElementById('paste-btn').addEventListener('click', pasteText);
@@ -175,6 +176,39 @@ function copyResult() {
     }).catch(() => {
         showMessage('复制失败，请检查剪贴板权限', 'error');
     });
+}
+
+function downloadResult() {
+    const translationText = resultDiv.querySelector('.translation-text');
+    if (!translationText) {
+        showMessage('没有可下载的翻译结果', 'warning');
+        return;
+    }
+
+    const dateStamp = new Date().toISOString().slice(0, 10);
+    const exportText = [
+        '慧译通 Buddhist AI Translator',
+        `导出日期: ${dateStamp}`,
+        `源语言: ${languageMap[sourceSelect.value] || sourceSelect.value}`,
+        `目标语言: ${languageMap[targetSelect.value] || targetSelect.value}`,
+        '',
+        '原文:',
+        sourceTextArea.value.trim(),
+        '',
+        '译文:',
+        translationText.textContent.trim()
+    ].join('\n');
+    const blob = new Blob([exportText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+
+    a.href = url;
+    a.download = 'buddhist-translation-' + dateStamp + '.txt';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showMessage('译文已下载', 'success');
 }
 
 function pasteText() {
