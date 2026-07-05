@@ -51,3 +51,13 @@ test('issue templates cover bug reports and terminology contributions', async ()
   assert.match(terminology, /Source reference/);
   assert.match(terminology, /src\/terms\.json/);
 });
+
+test('CONTRIBUTING links to canonical GitHub templates without stale placeholders', async () => {
+  const contributing = await readProjectFile('CONTRIBUTING.md');
+
+  assert.match(contributing, /\.github\/pull_request_template\.md/);
+  assert.match(contributing, /\.github\/ISSUE_TEMPLATE\/bug_report\.md/);
+  assert.match(contributing, /\.github\/ISSUE_TEMPLATE\/terminology\.md/);
+  assert.doesNotMatch(contributing, /### Pull Request 模板/);
+  assert.doesNotMatch(contributing, /如果您希望添加邮箱联系方式/);
+});
