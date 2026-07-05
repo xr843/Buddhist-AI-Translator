@@ -190,6 +190,9 @@ export async function translateWithDeepSeek(text, sourceLang, targetLang) {
         }
 
         result = removeQuotes(result);
+        if (typeof result !== 'string' || result.trim().length === 0) {
+            throw new Error('API返回数据格式错误');
+        }
 
         // 缓存结果
         cleanCache();
