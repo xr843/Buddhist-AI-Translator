@@ -104,6 +104,9 @@ export function describeTranslationError(error) {
     if (/超时/.test(message)) {
         return '翻译请求超时，请稍后重试。';
     }
+    if (/network|failed to fetch/i.test(message)) {
+        return '网络连接失败，请检查网络或 Worker 代理配置。';
+    }
     if (/API请求失败:\s*5\d\d\b|DeepSeek API 错误:\s*5\d\d\b|代理请求失败/.test(message)) {
         return 'DeepSeek 服务暂时不可用，请稍后重试。';
     }
