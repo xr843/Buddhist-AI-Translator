@@ -185,6 +185,49 @@ test('unsupported language codes return 400 without calling fetch', async (t) =>
     assert.equal(calls, 0);
 });
 
+test('rate-limited translate responses include Retry-After', async (t) => {
+    const originalFetch = globalThis.fetch;
+    const originalDateNow = Date.now;
+    let calls = 0;
+
+    globalThis.fetch = async () => {
+        calls += 1;
+        throw new Error('DeepSeek should not be called while rate limited');
+    };
+    Date.now = () => 120_000;
+
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+        Date.now = originalDateNow;
+    });
+
+    const env = {
+        DEEPSEEK_API_KEY: 'test-key',
+        RATE_LIMIT_KV: {
+            async get() {
+                return Array.from({ length: 30 }, () => 90);
+            },
+            async put() {
+                throw new Error('rate-limited requests should not update KV');
+            }
+        }
+    };
+
+    const response = await worker.fetch(request('/translate', {
+        method: 'POST',
+        body: {
+            text: 'sabbe sankhara anicca',
+            sourceLang: 'pi',
+            targetLang: 'en'
+        }
+    }), env);
+
+    assert.equal(response.status, 429);
+    assert.equal(response.headers.get('Retry-After'), '30');
+    assert.equal(calls, 0);
+    assert.match((await json(response)).error, /30 秒后重试/);
+});
+
 test('successful translate builds the DeepSeek prompt from text and languages server-side', async (t) => {
     const originalFetch = globalThis.fetch;
     let outboundRequest;

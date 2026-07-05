@@ -79,7 +79,8 @@ async function handleTranslate(request, env, origin) {
         return jsonResponse(
             { error: `请求过于频繁，请 ${rateLimitResult.retryAfter} 秒后重试` },
             origin,
-            429
+            429,
+            { 'Retry-After': String(rateLimitResult.retryAfter) }
         );
     }
 
@@ -223,7 +224,7 @@ function handleCORS(request) {
     return new Response(null, { status: 204, headers });
 }
 
-function jsonResponse(data, origin, status = 200) {
+function jsonResponse(data, origin, status = 200, extraHeaders = {}) {
     return new Response(JSON.stringify(data), {
         status,
         headers: {
@@ -231,7 +232,8 @@ function jsonResponse(data, origin, status = 200) {
             'Access-Control-Allow-Origin': isAllowedOrigin(origin) ? origin : '',
             'Access-Control-Allow-Methods': 'POST, OPTIONS',
             'X-Content-Type-Options': 'nosniff',
-            'Vary': 'Origin'
+            'Vary': 'Origin',
+            ...extraHeaders
         }
     });
 }
