@@ -25,21 +25,32 @@ export function findMatchingTerms(text) {
     }
 
     const candidates = Object.entries(buddhistTerms)
-        .map(([term, translation]) => ({
-            term,
-            translation,
-            index: text.indexOf(term)
-        }))
-        .filter((candidate) => candidate.index !== -1);
+        .flatMap(([term, translation]) => {
+            const matches = [];
+            let index = text.indexOf(term);
+            while (index !== -1) {
+                matches.push({ term, translation, index });
+                index = text.indexOf(term, index + term.length);
+            }
+            return matches;
+        });
 
-    return candidates
+    const visibleMatches = candidates
         .filter((candidate) => !candidates.some((other) => (
             other.term !== candidate.term
             && other.term.length > candidate.term.length
             && candidate.index >= other.index
             && candidate.index + candidate.term.length <= other.index + other.term.length
         )))
-        .sort((a, b) => a.index - b.index || b.term.length - a.term.length)
+        .sort((a, b) => a.index - b.index || b.term.length - a.term.length);
+
+    const seenTerms = new Set();
+    return visibleMatches
+        .filter(({ term }) => {
+            if (seenTerms.has(term)) return false;
+            seenTerms.add(term);
+            return true;
+        })
         .map(({ term, translation }) => ({ term, translation }));
 }
 

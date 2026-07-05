@@ -66,6 +66,22 @@ test("findMatchingTerms returns both matched glossary entries for Heart Sutra te
   ]);
 });
 
+test("findMatchingTerms keeps shorter terms that also appear standalone", async () => {
+  installTermsFetch();
+  await translator.loadTerms();
+
+  assert.deepEqual(translator.findMatchingTerms('观自在菩萨亦名菩萨'), [
+    {
+      term: '观自在菩萨',
+      translation: 'Avalokiteshvara Bodhisattva / अवलोकितेश्वर बोधिसत्त्व'
+    },
+    {
+      term: '菩萨',
+      translation: 'Bodhisattva / बोधिसत्त्व'
+    }
+  ]);
+});
+
 test('createTranslationPrompt includes a short glossary section only for matched terms', async () => {
   installTermsFetch();
   await translator.loadTerms();
