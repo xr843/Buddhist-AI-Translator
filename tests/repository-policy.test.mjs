@@ -61,3 +61,14 @@ test('CONTRIBUTING links to canonical GitHub templates without stale placeholder
   assert.doesNotMatch(contributing, /### Pull Request 模板/);
   assert.doesNotMatch(contributing, /如果您希望添加邮箱联系方式/);
 });
+
+test('repository exposes a GitHub-recognized code of conduct', async () => {
+  const [contributing, codeOfConduct] = await Promise.all([
+    readProjectFile('CONTRIBUTING.md'),
+    readProjectFile('CODE_OF_CONDUCT.md')
+  ]);
+
+  assert.match(contributing, /CODE_OF_CONDUCT\.md/);
+  assert.match(codeOfConduct, /Contributor Covenant/);
+  assert.match(codeOfConduct, /Enforcement/);
+});
