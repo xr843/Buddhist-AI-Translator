@@ -72,3 +72,10 @@ test('repository exposes a GitHub-recognized code of conduct', async () => {
   assert.match(codeOfConduct, /Contributor Covenant/);
   assert.match(codeOfConduct, /Enforcement/);
 });
+
+test('CONTRIBUTING does not link to disabled repository features', async () => {
+  const contributing = await readProjectFile('CONTRIBUTING.md');
+
+  assert.doesNotMatch(contributing, /\/discussions\b/);
+  assert.doesNotMatch(contributing, /Discussions/);
+});
