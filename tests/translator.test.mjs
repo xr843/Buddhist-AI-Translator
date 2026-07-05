@@ -161,6 +161,35 @@ test('translateWithDeepSeek classifies malformed successful JSON responses', asy
   assert.equal(translationCache.size, 0);
 });
 
+test('translateWithDeepSeek rejects direct responses without translation content', async (t) => {
+  const originalFetch = globalThis.fetch;
+  const originalApiKey = API_CONFIG.apiKey;
+  const originalProxyURL = API_CONFIG.proxyURL;
+
+  API_CONFIG.apiKey = 'sk-test';
+  API_CONFIG.proxyURL = '';
+  translationCache.clear();
+  globalThis.fetch = async () => new Response(JSON.stringify({
+    choices: [{ message: { role: 'assistant' } }]
+  }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' }
+  });
+
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+    API_CONFIG.apiKey = originalApiKey;
+    API_CONFIG.proxyURL = originalProxyURL;
+    translationCache.clear();
+  });
+
+  await assert.rejects(
+    translator.translateWithDeepSeek('舍利子', 'zh-classical', 'en'),
+    /API返回数据格式错误/
+  );
+  assert.equal(translationCache.size, 0);
+});
+
 test('describeTranslationError maps API failures to actionable UI messages', () => {
   assert.equal(
     translator.describeTranslationError(new Error('API密钥未配置')),
