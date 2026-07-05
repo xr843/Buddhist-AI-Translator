@@ -59,6 +59,7 @@ python3 -m http.server 8000
 ```bash
 npm run verify
 ```
+需要 Node.js 22 或更高版本。
 
 ### 键盘快捷键
 
@@ -134,6 +135,7 @@ python3 -m http.server 8000
 ```bash
 npm run verify
 ```
+Requires Node.js 22 or newer.
 
 ### Keyboard Shortcuts
 
