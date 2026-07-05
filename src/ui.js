@@ -79,6 +79,10 @@ function handleKeyboardShortcuts(event) {
 // --- 翻译 ---
 
 async function handleTranslate() {
+    if (translateBtn.disabled) {
+        return;
+    }
+
     const rawText = sourceTextArea.value.trim();
     if (!rawText) {
         showMessage('请输入要翻译的文本', 'warning');

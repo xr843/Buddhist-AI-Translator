@@ -111,6 +111,14 @@ test('src/ui.js rejects text that becomes empty after input sanitization', async
     );
 });
 
+test('src/ui.js prevents duplicate translate requests while one is running', async () => {
+    const source = await readSource('src/ui.js');
+    const normalized = compact(source);
+
+    assert.match(normalized, /asyncfunctionhandleTranslate\(\){if\(translateBtn\.disabled\){return;}/);
+    assert.match(normalized, /if\(translateBtn\.disabled\)\{return;\}[\s\S]*constrawText=sourceTextArea\.value\.trim\(\)/);
+});
+
 test('styles.css keeps the fixed footer from covering translator content', async () => {
     const source = await readSource('styles.css');
 
