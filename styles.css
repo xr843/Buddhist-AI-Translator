@@ -1110,6 +1110,9 @@ body {
 
 .lexicon-panel,
 .provenance-panel {
+    /* 这两块是 .translation-area 这个 1fr/90px/1fr 栅格的子项，
+       不横跨整行的话，溯源面板会被挤进中间那条 90px 的窄列里。 */
+    grid-column: 1 / -1;
     margin-top: 1rem;
     padding: 1rem;
     border: 1px solid var(--border-color);

@@ -183,6 +183,14 @@ async function runSmokeCheck() {
       throw new Error(`Provenance deep link should be used verbatim, received: ${provenanceLink}`);
     }
 
+    // 两个结果面板是 .translation-area 这个三列栅格的子项，不横跨整行就会被挤进
+    // 中间那条 90px 的窄列。量实际渲染宽度，光看 CSS 里有没有那行声明不算数。
+    const areaWidth = (await page.locator('.translation-area').boundingBox())?.width ?? 0;
+    const panelWidth = (await page.locator('#provenance-panel').boundingBox())?.width ?? 0;
+    if (panelWidth < areaWidth * 0.9) {
+      throw new Error(`Provenance panel is squeezed: ${panelWidth}px inside a ${areaWidth}px area`);
+    }
+
     await page.locator('#copy-btn').click();
     const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
     if (!/Avalokiteshvara Bodhisattva/.test(clipboardText)) {
