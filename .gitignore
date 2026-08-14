@@ -45,3 +45,6 @@ config.local.js
 
 # 用户自定义配置
 api-config.js 
+# wrangler dev 的本地缓存
+.wrangler/
+worker/.wrangler/

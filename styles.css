@@ -20,6 +20,15 @@
     box-sizing: border-box;
 }
 
+/*
+ * 浏览器给 [hidden] 的默认样式是 display:none，但它的优先级低于任何
+ * 带类名的 display 声明。本页里 .witness-grid 之类用了 display:grid/flex，
+ * 不加这条，元素设了 hidden 也照样显示。
+ */
+[hidden] {
+    display: none !important;
+}
+
 body {
     font-family: 'Noto Sans SC', sans-serif;
     line-height: 1.6;
@@ -925,4 +934,296 @@ body {
     display: flex;
     flex-direction: column;
     overflow: visible;
+}
+
+/* --- 引擎选择 --- */
+.engine-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.engine-select {
+    padding: 0.35rem 0.6rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--background-white);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.engine-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+}
+
+/* --- 译风设置 --- */
+.style-panel {
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--background-white);
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+
+.style-summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.7rem 1rem;
+    cursor: pointer;
+    list-style: none;
+    font-size: 0.9rem;
+}
+
+.style-summary-row::-webkit-details-marker {
+    display: none;
+}
+
+.style-title {
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.style-summary {
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.style-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 0.75rem;
+    padding: 0 1rem 1rem;
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+}
+
+.style-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.style-field label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.style-field .lang-select {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.85rem;
+}
+
+/* --- 多本合参 --- */
+.witness-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+    font-size: 0.85rem;
+}
+
+.witness-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.witness-hint {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+}
+
+.witness-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px dashed var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--background-light);
+}
+
+.witness-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.witness-field label,
+.witness-focus label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.witness-input {
+    padding: 0.6rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--background-white);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.9rem;
+    resize: vertical;
+}
+
+.witness-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+}
+
+.witness-focus {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    justify-content: flex-end;
+}
+
+.witness-focus .lang-select {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.85rem;
+}
+
+/* --- 结果元信息与面板 --- */
+.result-meta {
+    margin-top: 0.5rem;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+}
+
+.lexicon-panel,
+.provenance-panel {
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--background-white);
+}
+
+.panel-title {
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 0.6rem;
+    font-size: 0.92rem;
+}
+
+.panel-note {
+    margin-top: 0.6rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.lexicon-list,
+.provenance-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.lexicon-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.75rem;
+    font-size: 0.87rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px dotted var(--border-color);
+}
+
+.lexicon-term {
+    color: var(--text-primary);
+}
+
+.lexicon-meta {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+
+.provenance-list li {
+    padding-bottom: 0.6rem;
+    border-bottom: 1px dotted var(--border-color);
+}
+
+.prov-title {
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 0.88rem;
+}
+
+.prov-seg {
+    font-weight: 400;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+}
+
+.prov-text {
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    margin: 0.25rem 0;
+}
+
+.prov-link a {
+    color: var(--primary-dark);
+    font-size: 0.78rem;
+    text-decoration: none;
+}
+
+.prov-link a:hover {
+    text-decoration: underline;
+}
+
+/* --- 说明与鸣谢 --- */
+.modal-note {
+    margin-bottom: 1rem;
+    padding: 0.7rem 0.85rem;
+    border-radius: 8px;
+    background: var(--background-light);
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    line-height: 1.6;
+}
+
+.footer-credit {
+    margin-top: 0.4rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+}
+
+.footer-credit a {
+    color: var(--primary-dark);
+    text-decoration: none;
+}
+
+.footer-credit a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+    .style-summary {
+        display: none;
+    }
+
+    .witness-grid {
+        grid-template-columns: 1fr;
+    }
 }

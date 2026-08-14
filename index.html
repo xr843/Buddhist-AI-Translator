@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-DVs0fR8XB1jjl1bgTOlKWYtWCgzq/pEgxRTUXDRLz0U='; style-src 'self' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://api.deepseek.com; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-DVs0fR8XB1jjl1bgTOlKWYtWCgzq/pEgxRTUXDRLz0U='; style-src 'self' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://api.deepseek.com https://dharmamitra.org https://*.workers.dev; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
     <title>慧译通 - 佛教AI翻译器 | Buddhist AI Translator</title>
 
     <!-- SEO Meta Tags -->
@@ -70,9 +70,15 @@
         <section class="translator">
             <div class="container">
                 <div class="translator-card">
-                    <!-- API配置状态栏 -->
+                    <!-- 引擎与API配置状态栏 -->
                     <div class="api-status-bar">
                         <div class="api-status-info">
+                            <label class="engine-label" for="engine-select">引擎</label>
+                            <select id="engine-select" class="engine-select">
+                                <option value="auto">自动选择</option>
+                                <option value="mitra">MITRA 佛典引擎（免密钥）</option>
+                                <option value="deepseek">DeepSeek 通用模型</option>
+                            </select>
                             <span id="api-status-text">API未配置</span>
                             <span id="api-status-indicator" class="status-indicator"></span>
                         </div>
@@ -81,7 +87,7 @@
                             <span>配置API</span>
                         </button>
                     </div>
-                    
+
                     <div class="language-selectors">
                         <div class="language-selector">
                             <label for="source-lang">源语言</label>
@@ -138,6 +144,52 @@
                         </div>
                     </div>
 
+                    <!-- 译风设置：借鉴 foguang.ai 的多维风格控制 -->
+                    <details class="style-panel" id="style-panel">
+                        <summary class="style-summary-row">
+                            <span class="style-title"><i class="fas fa-sliders-h"></i> 译风设置</span>
+                            <span class="style-summary" id="style-summary"></span>
+                        </summary>
+                        <div class="style-grid" id="style-grid"></div>
+                    </details>
+
+                    <!-- 多本合参：同一段落的多语种写本一起送入 -->
+                    <div class="witness-bar">
+                        <label class="witness-switch" for="multi-witness-toggle">
+                            <input type="checkbox" id="multi-witness-toggle">
+                            <span><i class="fas fa-layer-group"></i> 多本合参</span>
+                        </label>
+                        <span class="witness-hint">同一段落的梵／巴／汉／藏写本一起送入，得到一份权衡各本的译文</span>
+                    </div>
+                    <div class="witness-grid" id="witness-grid" hidden>
+                        <div class="witness-field" data-lang="sa">
+                            <label for="witness-sa">梵文</label>
+                            <textarea id="witness-sa" class="witness-input" rows="3" placeholder="Devanagari 或 IAST"></textarea>
+                        </div>
+                        <div class="witness-field" data-lang="pi">
+                            <label for="witness-pi">巴利文</label>
+                            <textarea id="witness-pi" class="witness-input" rows="3" placeholder="罗马转写"></textarea>
+                        </div>
+                        <div class="witness-field" data-lang="zh-classical">
+                            <label for="witness-zh">汉文</label>
+                            <textarea id="witness-zh" class="witness-input" rows="3" placeholder="文言／汉译佛典"></textarea>
+                        </div>
+                        <div class="witness-field" data-lang="bo">
+                            <label for="witness-bo">藏文</label>
+                            <textarea id="witness-bo" class="witness-input" rows="3" placeholder="藏文 Unicode 或 Wylie"></textarea>
+                        </div>
+                        <div class="witness-focus">
+                            <label for="focus-select">侧重写本</label>
+                            <select id="focus-select" class="lang-select">
+                                <option value="">等量齐观</option>
+                                <option value="sa">以梵本为主</option>
+                                <option value="pi">以巴利本为主</option>
+                                <option value="zh-classical">以汉本为主</option>
+                                <option value="bo">以藏本为主</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <div class="translation-area">
                         <div class="input-section">
                             <div class="text-area-header">
@@ -174,6 +226,9 @@
                             <div class="text-area-header">
                                 <span class="language-label" id="target-label">现代中文</span>
                                 <div class="output-tools">
+                                    <button class="tool-btn" id="provenance-btn" title="在藏经语料中溯源">
+                                        <i class="fas fa-book-open"></i>
+                                    </button>
                                     <button class="tool-btn" id="copy-btn" title="复制">
                                         <i class="fas fa-copy"></i>
                                     </button>
@@ -188,7 +243,14 @@
                             <div id="translation-result" class="text-output">
                                 <div class="placeholder">翻译结果将显示在这里...</div>
                             </div>
+                            <div class="result-meta" id="result-meta" hidden></div>
                         </div>
+
+                        <!-- 本文命中的实证术语对照 -->
+                        <div class="lexicon-panel" id="lexicon-panel" hidden></div>
+
+                        <!-- 藏经溯源结果 -->
+                        <div class="provenance-panel" id="provenance-panel" hidden></div>
                     </div>
                 </div>
             </div>
@@ -205,8 +267,21 @@
                 </button>
             </div>
             <div class="modal-body">
+                <p class="modal-note">
+                    梵、巴、汉、藏四种佛典语言的翻译走 MITRA 引擎，<strong>不需要任何密钥</strong>，
+                    但需要一个 Worker 中转（浏览器不能直连 Dharmamitra）。
+                    只有译入文言文、或从现代语言译出等 MITRA 不受理的语种对，才需要 DeepSeek 密钥。
+                </p>
                 <div class="form-group">
-                    <label for="api-key-input">DeepSeek API密钥</label>
+                    <label for="proxy-url-input">Worker 中转地址</label>
+                    <input type="url" id="proxy-url-input" class="form-control" placeholder="https://your-worker.workers.dev">
+                    <small class="form-text">
+                        部署 <code>worker/</code> 后填在这里即可启用 MITRA 引擎与藏经溯源；
+                        中转本身不需要任何密钥。留空则只能使用 DeepSeek。
+                    </small>
+                </div>
+                <div class="form-group">
+                    <label for="api-key-input">DeepSeek API密钥（可选）</label>
                     <input type="password" id="api-key-input" class="form-control" placeholder="请输入您的DeepSeek API密钥">
                     <small class="form-text">
                         请访问 <a href="https://platform.deepseek.com" target="_blank" rel="noopener noreferrer">DeepSeek平台</a> 获取您的API密钥。
@@ -229,6 +304,13 @@
     <footer class="footer-simple">
         <div class="container">
             <p>&copy; 2025 佛教文本AI翻译器</p>
+            <p class="footer-credit">
+                佛典翻译与语料检索由
+                <a href="https://dharmamitra.org" target="_blank" rel="noopener noreferrer">Dharmamitra / MITRA</a>
+                （东北大学）提供；术语对照数据取自
+                <a href="https://github.com/dharmamitra/dharmamitra-lexicon" target="_blank" rel="noopener noreferrer">dharmamitra-lexicon</a>，
+                依 CC BY 4.0 使用。
+            </p>
         </div>
     </footer>
 

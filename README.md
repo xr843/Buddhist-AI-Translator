@@ -21,18 +21,39 @@
 
 ## 项目简介
 
-慧译通是一款专为佛教文献翻译设计的 AI 翻译平台。结合 DeepSeek 大语言模型与专业佛学术语库，为学者、修行者和佛学爱好者提供准确、专业的多语种翻译服务。
+慧译通是一款专为佛教文献翻译设计的 AI 翻译平台。默认使用佛典专用的 MITRA 神经翻译引擎
+（Dharmamitra 项目，东北大学），**打开即用、无需任何密钥**；并以 8,610 条从平行语料挖掘的
+实证术语对照为参考，为学者、修行者和佛学爱好者提供准确、可溯源的多语种翻译。
 
 ### 核心特性
 
 | 特性 | 说明 |
 |------|------|
-| **AI 智能翻译** | DeepSeek API 驱动，深度理解佛学语境 |
+| **佛典专用引擎** | 默认走 MITRA，梵／巴／汉／藏四种佛典语言无需密钥即可翻译 |
+| **多本合参** | 同一段落的多语种写本一起送入，得到一份权衡各本的译文，可指定侧重写本 |
+| **译风控制** | 文本类别 + 译法／术语呈现／语体／注释深度，五维组合成给模型的指令 |
+| **出处溯源** | 一键在藏经语料中检索原文，返回经名、`segmentnr` 与阅读室深链 |
+| **实证术语对照** | 8,610 条汉语术语 → 梵文原语／藏译，带出现次数与大正藏经号 |
 | **18 种语言** | 梵文、巴利文、藏文、文言文、现代中文、英文等 |
-| **50+ 术语库** | 内置专业佛教术语数据库，确保翻译准确性 |
 | **语音功能** | 语音输入 + 多语言朗读，支持分段高亮 |
-| **结果导出** | 一键下载译文、原文和语言信息为 `.txt` 文件 |
+| **结果导出** | 一键下载译文、原文、引擎与译风信息为 `.txt` 文件 |
 | **静态部署** | 纯前端 ES 模块，可用任意静态服务器运行 |
+
+### 两个引擎的分工
+
+| | MITRA（默认） | DeepSeek（可选） |
+|---|---|---|
+| 密钥 | 不需要 | 需要，或由 Worker 代管 |
+| 擅长 | 佛典语言 → 现代语言 | MITRA 不受理的语种对 |
+| 何时使用 | 源语言是文言文／梵／巴／藏，且目标是现代语言 | 译入文言文、译入古典语言、从现代语言译出 |
+
+引擎在界面上可以手动指定，也可以交给「自动选择」。详见 [docs/mitra.md](docs/mitra.md)。
+
+> ⚠️ **启用 MITRA 需要先部署 `worker/`（不需要任何密钥）。**
+> 浏览器不能直连 Dharmamitra —— 对方在实际响应上重复发送
+> `Access-Control-Allow-Origin`，浏览器一律拒收（curl 看不出来，只有真浏览器照得出）。
+> 部署后在 `src/config.js` 填 `proxyURL`，或在站点的「配置API」弹窗里填自己的
+> Worker 地址即可。未配置中转时，站点自动退回 DeepSeek。
 
 ### 支持语言
 
@@ -51,10 +72,19 @@ python3 -m http.server 8000
 # 访问 http://127.0.0.1:8000/
 ```
 
-**配置 API**:
-1. BYOK 模式: 访问 [DeepSeek 开放平台](https://platform.deepseek.com) 获取 API 密钥，在浏览器中本地保存
-2. Worker 代理模式: 部署 `worker/`，在 `src/config.js` 配置 `proxyURL`
-3. 公共部署建议使用 Worker 代理，避免在浏览器暴露共享密钥
+**配置**:
+
+1. **启用 MITRA（推荐，无需任何密钥）**: 部署 `worker/`，在 `src/config.js` 填 `proxyURL`
+   —— 或直接在站点的「配置API」弹窗里填 Worker 地址。之后所有访客都能用佛典引擎与藏经溯源，
+   谁都不用自备密钥。
+   ```bash
+   cd worker && wrangler deploy      # 这一步不需要 wrangler secret put
+   ```
+2. **DeepSeek（可选）**: 只有 MITRA 不受理的语种对才需要。BYOK 模式在浏览器本地保存密钥；
+   公共部署应把密钥交给同一个 Worker 代管（`wrangler secret put DEEPSEEK_API_KEY`），
+   避免在浏览器暴露共享密钥。
+
+详见 [worker/README.md](worker/README.md)。
 
 **本地验证**:
 ```bash
@@ -76,21 +106,40 @@ npm run verify
 ### 技术栈
 
 ```
-Frontend: HTML5 + CSS3 + JavaScript ES6+
-AI Engine: DeepSeek API
-Icons: Font Awesome 6.0
-Fonts: Google Fonts (Noto Sans SC/Serif SC)
-Speech: Web Speech API
+Frontend:      HTML5 + CSS3 + JavaScript ES6+（无框架、无构建）
+翻译引擎:      MITRA cat-translate（默认，免密钥）/ DeepSeek API（可选）
+语料检索:      MITRA primary search
+术语数据:      dharmamitra-lexicon (CC BY 4.0)
+Icons:         Font Awesome 6.0
+Fonts:         Google Fonts (Noto Sans SC/Serif SC)
+Speech:        Web Speech API
 ```
 
 ### 佛教术语数据库
 
-内置经典术语翻译对照，涵盖:
+分两层。
+
+**人工审定层** `src/terms.json`（55 条，带解释，随首屏加载）:
 - **心经术语**: 般若波罗蜜多、观自在菩萨、五蕴皆空...
 - **基础概念**: 三宝、四谛、八正道、无常、无我、涅槃...
 - **唯识学派**: 阿赖耶识、八识、三性...
 - **中观学派**: 中道、空性、缘起、二谛...
 - **净土/禅宗**: 阿弥陀佛、念佛、顿悟、明心见性...
+
+**实证对照层** `src/data/lexicon.json`（8,610 条，按需加载）:
+从 [dharmamitra-lexicon](https://github.com/dharmamitra/dharmamitra-lexicon)（CC BY 4.0）
+挖掘的汉语术语 → 梵文原语／藏译，每条带出现次数与大正藏经号。例如
+
+| 术语 | 梵文原语（出现次数） | 藏译 |
+|---|---|---|
+| 涅槃 | nirvāṇa (611) / parinirvāṇa (40) | mya ngan las 'das pa |
+| 阿賴耶識 | ālayavijñāna (45) | kun gzhi rnam par shes pa |
+| 空 | śūnyatā (644) / śūnya (630) / **ākāśa (232)** | stong pa nyid |
+
+（「空」同时对应 śūnyatā 与 ākāśa，正是手写术语表容易漏掉的一类分歧。）
+
+这一层是机器挖掘、未经逐条审定的。构建方法、过滤依据与**抽样实测精确率 87.5%**
+见 [docs/lexicon.md](docs/lexicon.md)。
 
 ---
 
@@ -100,17 +149,23 @@ Speech: Web Speech API
 
 ### About
 
-Buddhist AI Translator is a specialized AI-powered translation platform designed for Buddhist texts. Combining DeepSeek's large language model with a professional Buddhist terminology database, it provides accurate, scholarly translations across 18 languages.
+Buddhist AI Translator is a specialized translation platform for Buddhist texts. It runs on the
+domain-tuned **MITRA** neural translation engine (Dharmamitra project, Tohoku University) by
+default — **no API key required** — and grounds its output in 8,610 attested term correspondences
+mined from aligned canonical parallels.
 
 ### Key Features
 
 | Feature | Description |
 |---------|-------------|
-| **AI Translation** | Powered by DeepSeek API with deep Buddhist context understanding |
+| **Domain engine, no key** | MITRA translates Sanskrit, Pali, Classical Chinese and Tibetan out of the box |
+| **Multi-witness translation** | Feed several language witnesses of one passage; get a single synthesised translation, optionally weighted toward a base text |
+| **Style control** | Source category plus literalness / term rendering / register / gloss depth, compiled into the model instruction |
+| **Provenance lookup** | Search the canonical corpus for the source passage; get titles, segment IDs and reading-room deep links |
+| **Attested glossary** | 8,610 Chinese terms mapped to their Sanskrit originals and Tibetan renderings, with occurrence counts and Taishō numbers |
 | **18 Languages** | Sanskrit, Pali, Tibetan, Classical Chinese, Modern Chinese, English, etc. |
-| **50+ Terms** | Built-in professional Buddhist terminology database |
 | **Voice Support** | Speech input + multi-language text-to-speech with segment highlighting |
-| **Result Export** | Download the source text, translation, and language metadata as a `.txt` file |
+| **Result Export** | Download source, translation, engine and style metadata as a `.txt` file |
 | **Static Deployment** | Frontend ES modules that run from any static server |
 
 ### Supported Languages
@@ -130,10 +185,20 @@ python3 -m http.server 8000
 # Visit http://127.0.0.1:8000/
 ```
 
-**API Configuration**:
-1. BYOK mode: get an API key from [DeepSeek Platform](https://platform.deepseek.com) and save it locally in the browser
-2. Worker proxy mode: deploy `worker/` and set `proxyURL` in `src/config.js`
-3. Use the Worker proxy for public deployments so shared keys stay server-side
+**Configuration**:
+
+1. **Enable MITRA (recommended, no key of any kind)**: deploy `worker/` and set `proxyURL` in
+   `src/config.js`, or paste the Worker URL into the site's settings dialog. Browsers cannot call
+   Dharmamitra directly — it sends a duplicated `Access-Control-Allow-Origin` on real responses,
+   which every browser rejects (curl does not check this; only a real browser catches it).
+   ```bash
+   cd worker && wrangler deploy      # no `wrangler secret put` needed for MITRA
+   ```
+2. **DeepSeek (optional)**: only for pairs MITRA does not serve. BYOK mode stores the key in the
+   browser; public deployments should let the same Worker hold the key
+   (`wrangler secret put DEEPSEEK_API_KEY`) so shared keys stay server-side.
+
+See [worker/README.md](worker/README.md).
 
 **Local Verification**:
 ```bash
@@ -160,14 +225,35 @@ Requires Node.js 22 or newer. `npm run verify` runs syntax checks, the Worker dr
 Buddhist-AI-Translator/
 ├── index.html          # Main page
 ├── styles.css          # Stylesheet
-├── src/                # ES modules, translator logic, config, terms
+├── src/                # ES modules: translator, mitra client, style, lexicon, config, terms
+│   └── data/           # Generated lexicon index (CC BY 4.0, see docs/lexicon.md)
 ├── worker/             # Optional Cloudflare Worker proxy
+├── scripts/            # Verification scripts + the lexicon build tool
+├── docs/               # MITRA integration and lexicon provenance notes
 ├── tests/              # Node source and unit tests
 ├── README.md           # Documentation
 ├── CONTRIBUTING.md     # Contribution guidelines
 ├── LICENSE             # MIT License
 └── image/              # Screenshots
 ```
+
+## 数据来源与鸣谢 | Attribution
+
+本项目的佛典翻译能力、语料检索与术语对照数据来自
+**[Dharmamitra](https://dharmamitra.org) / MITRA 项目（东北大学，Sebastian Nehrdich 等）**：
+
+| 用途 | 来源 | 许可 |
+|---|---|---|
+| 佛典翻译（默认引擎） | MITRA `cat-translate` 公开接口 | 对方免费公开，无需鉴权 |
+| 藏经语料检索与深链 | MITRA `primary` 公开接口 | 同上 |
+| 汉语术语 → 梵／藏对照 | [dharmamitra-lexicon](https://github.com/dharmamitra/dharmamitra-lexicon) | **CC BY 4.0** |
+
+产品形态上的**译风多维控制**（文本类别 + 若干风格维度组合成给模型的指令），
+参考了 [foguang.ai](https://foguang.ai)（佛光山人间佛教研究院 × MITRA）公开说明的做法。
+
+> **公开部署前请先致信 `dharmamitra-project@gmail.com` 告知。**
+> 这是 dharmamitra-lexicon 上游 README 对下游公开应用的明确请求；
+> 对免费公开接口的用量而言，这也是应有的礼节。
 
 ## Browser Compatibility
 

@@ -27,6 +27,28 @@ const RATE_LIMIT_PER_MINUTE = 30;
 const DEEPSEEK_UPSTREAM_TIMEOUT_MS = 30000;
 const MAX_REQUEST_BODY_BYTES = 64 * 1024;
 
+/**
+ * MITRA 中转。
+ *
+ * 为什么必须中转而不能让浏览器直连：dharmamitra.org 在**实际响应**上把
+ * `Access-Control-Allow-Origin: *` 发了两遍（预检 OPTIONS 只发一遍，所以预检能过）。
+ * 浏览器对重复的 ACAO 一律拒收，报
+ * "The 'Access-Control-Allow-Origin' header contains multiple values '*, *'"。
+ * 2026-08-14 在 cat-translate 与 primary 两个端点上都复现。
+ * 上游修好之后，这一层仍然有用（限流、集中缓存），但前端也可以改回直连。
+ */
+const MITRA_TRANSLATE_URL = 'https://dharmamitra.org/api-search/cat-translate/v1/translate';
+const MITRA_SEARCH_URL = 'https://dharmamitra.org/api-search/primary/';
+// 官方文档：长输入可能要 60 秒，上游 Cloudflare 在 100 秒截断。
+const MITRA_UPSTREAM_TIMEOUT_MS = 95000;
+const MITRA_WITNESS_FIELDS = ['input_tibetan', 'input_chinese', 'input_pali', 'input_sanskrit'];
+const MITRA_FOCUS_VALUES = new Set(['equal', 'tibetan', 'chinese', 'pali', 'sanskrit']);
+const MITRA_SEARCH_TYPES = new Set(['regular', 'semantic', 'semantic_only']);
+const MITRA_LANGUAGE_FILTERS = new Set(['auto', 'all', 'bo', 'sa', 'zh', 'pa']);
+const MITRA_MAX_FIELD_LENGTH = 5000;
+const MITRA_MAX_CONTEXT_LENGTH = 4000;
+const MITRA_MAX_SEARCH_RESULTS = 20;
+
 export default {
     async fetch(request, env) {
         // 处理 CORS 预检请求
@@ -59,7 +81,13 @@ export default {
         if (url.pathname === '/translate' && request.method === 'POST') {
             return handleTranslate(request, env, origin);
         }
-        if (url.pathname === '/translate') {
+        if (url.pathname === '/mitra/translate' && request.method === 'POST') {
+            return handleMitraTranslate(request, env, origin);
+        }
+        if (url.pathname === '/mitra/search' && request.method === 'POST') {
+            return handleMitraSearch(request, env, origin);
+        }
+        if (['/translate', '/mitra/translate', '/mitra/search'].includes(url.pathname)) {
             return jsonResponse(
                 { error: '方法不允许' },
                 origin,
@@ -210,6 +238,206 @@ async function handleTranslate(request, env, origin) {
     } finally {
         clearTimeout(upstreamTimeout);
     }
+}
+
+// --- MITRA 中转 ---
+
+/**
+ * 读出并校验 JSON 请求体。失败时返回 { response }，调用方直接返回它。
+ */
+async function readJsonBody(request, env, origin) {
+    const contentType = request.headers.get('Content-Type') || '';
+    if (!isJsonContentType(contentType)) {
+        return { response: jsonResponse({ error: 'Content-Type 必须为 application/json' }, origin, env, 415) };
+    }
+    if (isRequestBodyTooLarge(request)) {
+        return { response: jsonResponse({ error: '请求体过大' }, origin, env, 413) };
+    }
+
+    let rawBody;
+    try {
+        rawBody = await request.text();
+    } catch {
+        return { response: jsonResponse({ error: '请求体格式错误' }, origin, env, 400) };
+    }
+    if (new TextEncoder().encode(rawBody).length > MAX_REQUEST_BODY_BYTES) {
+        return { response: jsonResponse({ error: '请求体过大' }, origin, env, 413) };
+    }
+
+    let body;
+    try {
+        body = JSON.parse(rawBody);
+    } catch {
+        return { response: jsonResponse({ error: '请求体格式错误' }, origin, env, 400) };
+    }
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+        return { response: jsonResponse({ error: '请求体格式错误' }, origin, env, 400) };
+    }
+
+    return { body };
+}
+
+function trimmedString(value, maxLength) {
+    if (typeof value !== 'string') return '';
+    return value.trim().slice(0, maxLength);
+}
+
+async function fetchUpstream(url, payload, timeoutMs) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        return await fetch(url, {
+            method: 'POST',
+            signal: controller.signal,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+async function handleMitraTranslate(request, env, origin) {
+    const parsed = await readJsonBody(request, env, origin);
+    if (parsed.response) return parsed.response;
+    const body = parsed.body;
+
+    // 只把已知字段转发出去，不做透传，免得这里变成一个开放代理。
+    const payload = {
+        input_tibetan: '',
+        input_chinese: '',
+        input_pali: '',
+        input_sanskrit: '',
+        context: trimmedString(body.context, MITRA_MAX_CONTEXT_LENGTH),
+        focus: MITRA_FOCUS_VALUES.has(body.focus) ? body.focus : 'equal',
+        target_language: trimmedString(body.target_language, 60),
+        style_instruction: trimmedString(body.style_instruction, MITRA_MAX_CONTEXT_LENGTH) || 'balanced'
+    };
+
+    let hasWitness = false;
+    for (const field of MITRA_WITNESS_FIELDS) {
+        const value = trimmedString(body[field], MITRA_MAX_FIELD_LENGTH);
+        payload[field] = value;
+        if (value) hasWitness = true;
+    }
+
+    if (!hasWitness) {
+        return jsonResponse({ error: '至少需要一路写本原文' }, origin, env, 400);
+    }
+    if (!payload.target_language) {
+        return jsonResponse({ error: '缺少必要参数: target_language' }, origin, env, 400);
+    }
+
+    const rateLimited = await enforceRateLimit(request, env, origin);
+    if (rateLimited) return rateLimited;
+
+    try {
+        const upstream = await fetchUpstream(MITRA_TRANSLATE_URL, payload, MITRA_UPSTREAM_TIMEOUT_MS);
+        if (!upstream.ok) {
+            return jsonResponse({ error: `MITRA 服务错误: ${upstream.status}` }, origin, env, upstream.status);
+        }
+
+        let data;
+        try {
+            data = await upstream.json();
+        } catch {
+            return jsonResponse({ error: 'MITRA 返回数据格式异常' }, origin, env, 502);
+        }
+
+        const translation = typeof data?.translation === 'string' ? data.translation.trim() : '';
+        if (!translation) {
+            return jsonResponse({ error: 'MITRA 返回数据格式异常' }, origin, env, 502);
+        }
+
+        return jsonResponse({ translation }, origin, env);
+    } catch {
+        return jsonResponse({ error: 'MITRA 中转请求失败' }, origin, env, 502);
+    }
+}
+
+async function handleMitraSearch(request, env, origin) {
+    const parsed = await readJsonBody(request, env, origin);
+    if (parsed.response) return parsed.response;
+    const body = parsed.body;
+
+    const searchInput = trimmedString(body.search_input, MITRA_MAX_FIELD_LENGTH);
+    if (!searchInput) {
+        return jsonResponse({ error: '缺少必要参数: search_input' }, origin, env, 400);
+    }
+
+    const requestedLimit = Number(body.limit);
+    const limit = Number.isFinite(requestedLimit)
+        ? Math.min(Math.max(Math.trunc(requestedLimit), 1), MITRA_MAX_SEARCH_RESULTS)
+        : 8;
+
+    const payload = {
+        search_input: searchInput,
+        search_type: MITRA_SEARCH_TYPES.has(body.search_type) ? body.search_type : 'regular',
+        filter_source_language: MITRA_LANGUAGE_FILTERS.has(body.filter_source_language)
+            ? body.filter_source_language
+            : 'all',
+        filter_target_language: 'all',
+        max_depth: 12,
+        // 官方文档：最终 ranker 是给浏览器 UI 调的，程序化取用应关掉。
+        do_ranking: false
+    };
+
+    const rateLimited = await enforceRateLimit(request, env, origin);
+    if (rateLimited) return rateLimited;
+
+    try {
+        const upstream = await fetchUpstream(MITRA_SEARCH_URL, payload, DEEPSEEK_UPSTREAM_TIMEOUT_MS);
+        if (!upstream.ok) {
+            return jsonResponse({ error: `MITRA 服务错误: ${upstream.status}` }, origin, env, upstream.status);
+        }
+
+        let data;
+        try {
+            data = await upstream.json();
+        } catch {
+            return jsonResponse({ error: 'MITRA 返回数据格式异常' }, origin, env, 502);
+        }
+
+        const results = Array.isArray(data?.results) ? data.results : [];
+        // vector 是几百个浮点数，text_new 与 text 重复，都不该发到浏览器去。
+        const trimmed = results.slice(0, limit).map(hit => ({
+            segmentnr: typeof hit?.segmentnr === 'string' ? hit.segmentnr : '',
+            lang: typeof hit?.lang === 'string' ? hit.lang : '',
+            source: typeof hit?.source === 'string' ? hit.source : '',
+            title: typeof hit?.title === 'string' ? hit.title : '',
+            text: typeof hit?.text === 'string' ? hit.text.replace(/\s+/g, ' ').trim() : '',
+            src_link: typeof hit?.src_link === 'string' ? hit.src_link : ''
+        }));
+
+        return jsonResponse({ results: trimmed }, origin, env);
+    } catch {
+        return jsonResponse({ error: 'MITRA 中转请求失败' }, origin, env, 502);
+    }
+}
+
+async function enforceRateLimit(request, env, origin) {
+    const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const rateLimitResult = await checkRateLimit(env, clientIP);
+
+    if (rateLimitResult.unavailable) {
+        return jsonResponse(
+            { error: '速率限制服务暂时不可用，请稍后重试' },
+            origin,
+            env,
+            503,
+            { 'Retry-After': String(rateLimitResult.retryAfter) }
+        );
+    }
+    if (!rateLimitResult.allowed) {
+        return jsonResponse(
+            { error: `请求过于频繁，请 ${rateLimitResult.retryAfter} 秒后重试` },
+            origin,
+            env,
+            429,
+            { 'Retry-After': String(rateLimitResult.retryAfter) }
+        );
+    }
+    return null;
 }
 
 // --- 工具函数 ---
