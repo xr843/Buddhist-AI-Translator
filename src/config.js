@@ -21,8 +21,13 @@ export const API_CONFIG = {
      * 两个用途：一是把 DeepSeek 密钥留在服务端，二是中转 MITRA
      * （浏览器不能直连 dharmamitra.org，原因见 src/mitra.js 里 allowDirect 的注释）。
      * 部署方在这里写死；自部署的人也可以在界面上填自己的地址，存在浏览器本地。
+     *
+     * 这个中转只开了 /mitra/* 两条免密钥路径所需的能力，没有配 DEEPSEEK_API_KEY，
+     * 所以 xr843.github.io 上梵/巴/汉/藏之间的佛典翻译与藏经溯源都不需要任何密钥。
+     * 「配置API」按钮因此变成纯可选项——只有译入文言文这类 MITRA 不受理的
+     * 语种对，才需要用户自带 DeepSeek 密钥。
      */
-    proxyURL: '',
+    proxyURL: 'https://buddhist-translator-api.lqsxianren.workers.dev',
     proxyURLOverride: readStored(PROXY_STORAGE_KEY)
 };
 

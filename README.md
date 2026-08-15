@@ -49,11 +49,16 @@
 
 引擎在界面上可以手动指定，也可以交给「自动选择」。详见 [docs/mitra.md](docs/mitra.md)。
 
-> ⚠️ **启用 MITRA 需要先部署 `worker/`（不需要任何密钥）。**
+> ✅ **在 [xr843.github.io](https://xr843.github.io/Buddhist-AI-Translator/) 上用，
+> 梵／巴／汉／藏之间的佛典翻译与藏经溯源不需要任何密钥**——中转已经部署好并写在
+> `src/config.js` 的 `proxyURL` 里。「配置API」只是可选项，仅在译入文言文这类
+> MITRA 不受理的语种对时才需要自带 DeepSeek 密钥。
+>
+> ⚠️ **自部署的人需要先自己部署 `worker/`（同样不需要任何密钥）。**
 > 浏览器不能直连 Dharmamitra —— 对方在实际响应上重复发送
 > `Access-Control-Allow-Origin`，浏览器一律拒收（curl 看不出来，只有真浏览器照得出）。
-> 部署后在 `src/config.js` 填 `proxyURL`，或在站点的「配置API」弹窗里填自己的
-> Worker 地址即可。未配置中转时，站点自动退回 DeepSeek。
+> 部署后在 `src/config.js` 填自己的 `proxyURL`，或在站点的「配置API」弹窗里填。
+> 未配置中转时，站点自动退回 DeepSeek。
 
 ### 支持语言
 
