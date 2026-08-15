@@ -394,7 +394,8 @@ export async function translateText(request) {
         style,
         focusLang = '',
         preference = 'auto',
-        useLexicon = true
+        useLexicon = true,
+        context
     } = request || {};
 
     const combined = joinWitnessesForPrompt(witnesses);
@@ -402,9 +403,12 @@ export async function translateText(request) {
         throw new Error('至少需要一段原文');
     }
 
-    let lexiconContext = '';
+    // 整部经模式下 context 由 document.js 统一装配（已译上文 + 术语表 + 语体，
+    // 按优先级排过序、卡过字数），这里不能再自作主张覆盖掉。
+    const hasExternalContext = typeof context === 'string';
+    let lexiconContext = hasExternalContext ? context : '';
     let lexiconTerms = 0;
-    if (useLexicon) {
+    if (!hasExternalContext && useLexicon) {
         try {
             const lexicon = getLoadedLexicon() || await loadLexicon();
             lexiconContext = buildLexiconContext(combined, lexicon);
@@ -417,6 +421,8 @@ export async function translateText(request) {
 
     const engine = selectEngine({ sourceLang, targetLang, text: combined, preference });
     const cacheVariant = variantKey(engine, style);
+    // 缓存键刻意**不含** context：佛典里同一段程式化句子会反复出现，
+    // 命中缓存意味着它们前后被译成同一个说法 —— 这正是整部经模式想要的一致性。
     const cacheKey = getCacheKey(combined, sourceLang, targetLang, cacheVariant);
 
     if (translationCache.has(cacheKey)) {

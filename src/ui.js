@@ -11,8 +11,9 @@ import {
     translateWithBuiltIn
 } from './translator.js';
 import { isMitraReachable, searchCanonical } from './mitra.js';
-import { findLexiconTerms, formatLexiconEntry, getLoadedLexicon, loadLexicon } from './lexicon.js';
+import { buildLexiconContext, findLexiconTerms, formatLexiconEntry, getLoadedLexicon, loadLexicon } from './lexicon.js';
 import { STYLE_DIMENSIONS, defaultStyle, describeStyle, normalizeStyle } from './style.js';
+import { renderDocumentMarkdown, translateDocument } from './document.js';
 import { initSpeech, startVoiceInput, speakResult } from './speech.js';
 
 // DOM 元素
@@ -20,8 +21,26 @@ let sourceTextArea, targetSelect, sourceSelect, translateBtn, resultDiv, charCou
 let sourceLabelSpan, targetLabelSpan;
 let engineSelect, styleGrid, styleSummary, multiWitnessToggle, witnessGrid, focusSelect;
 let resultMeta, lexiconPanel, provenancePanel, provenanceBtn;
+let documentToggle, documentPanel, docChunks, docNote, docProgressFill, docProgressText;
+let docContinueBtn, docStopBtn, docExportBtn, modeHint;
 
 let currentStyle = defaultStyle();
+
+const SHORT_TEXT_LIMIT = 5000;
+// 整部经模式下输入的是全文，不该再按一框的长度卡。逐块送上游时每块只有几百字。
+const DOCUMENT_TEXT_LIMIT = 60000;
+// 官方文档：长文翻译最大的失败模式是术语漂移，对策是短反馈环 —— 每几块停一次让人改。
+const PAUSE_EVERY_CHUNKS = 5;
+
+/** 一次整部经翻译的运行态。 */
+const documentRun = {
+    active: false,
+    iterator: null,
+    entries: [],
+    total: 0,
+    paused: false,
+    stopped: false
+};
 
 const WITNESS_INPUTS = [
     { lang: 'sa', id: 'witness-sa' },
@@ -52,6 +71,17 @@ export function initializeUI() {
     provenancePanel = document.getElementById('provenance-panel');
     provenanceBtn = document.getElementById('provenance-btn');
 
+    documentToggle = document.getElementById('document-mode-toggle');
+    documentPanel = document.getElementById('document-panel');
+    docChunks = document.getElementById('doc-chunks');
+    docNote = document.getElementById('doc-note');
+    docProgressFill = document.getElementById('doc-progress-fill');
+    docProgressText = document.getElementById('doc-progress-text');
+    docContinueBtn = document.getElementById('doc-continue');
+    docStopBtn = document.getElementById('doc-stop');
+    docExportBtn = document.getElementById('doc-export');
+    modeHint = document.getElementById('mode-hint');
+
     // 初始化语音模块
     initSpeech(
         () => targetSelect.value,
@@ -65,6 +95,7 @@ export function initializeUI() {
     updateCharCount();
     checkApiKeyStatus();
     updateWitnessVisibility();
+    updateDocumentMode();
     updateEngineHint();
 }
 
@@ -86,6 +117,10 @@ function bindEvents() {
     if (provenanceBtn) provenanceBtn.addEventListener('click', handleProvenance);
     if (engineSelect) engineSelect.addEventListener('change', updateEngineHint);
     if (multiWitnessToggle) multiWitnessToggle.addEventListener('change', updateWitnessVisibility);
+    if (documentToggle) documentToggle.addEventListener('change', updateDocumentMode);
+    if (docContinueBtn) docContinueBtn.addEventListener('click', resumeDocumentRun);
+    if (docStopBtn) docStopBtn.addEventListener('click', stopDocumentRun);
+    if (docExportBtn) docExportBtn.addEventListener('click', exportDocument);
     if (sourceSelect) sourceSelect.addEventListener('change', updateWitnessVisibility);
     if (sourceSelect) sourceSelect.addEventListener('change', updateEngineHint);
     if (targetSelect) targetSelect.addEventListener('change', updateEngineHint);
@@ -179,6 +214,12 @@ function updateWitnessVisibility() {
     if (!witnessGrid) return;
 
     const enabled = multiWitnessEnabled();
+    // 两个模式互斥，见 updateDocumentMode 里的说明
+    if (enabled && documentToggle?.checked) {
+        documentToggle.checked = false;
+        updateDocumentMode();
+    }
+
     witnessGrid.hidden = !enabled;
     if (!enabled) return;
 
@@ -205,6 +246,235 @@ function collectWitnesses(primaryText) {
         if (clean) witnesses[lang] = clean;
     }
     return witnesses;
+}
+
+// --- 整部经模式 ---
+
+function documentModeEnabled() {
+    return Boolean(documentToggle?.checked);
+}
+
+function updateDocumentMode() {
+    if (!documentPanel) return;
+
+    const enabled = documentModeEnabled();
+    // 两个模式互斥：多本合参要的是同一段落的多语种写本，整部经要的是一种语言的全文
+    if (enabled && multiWitnessToggle?.checked) {
+        multiWitnessToggle.checked = false;
+        updateWitnessVisibility();
+    }
+
+    documentPanel.hidden = !enabled || documentRun.entries.length === 0;
+    if (modeHint) {
+        modeHint.textContent = enabled
+            ? '整篇粘进来，按句切成小块逐块翻译，并把已译出的上文回喂给下一块，压住术语漂移'
+            : '同一段落的梵／巴／汉／藏写本一起送入，得到一份权衡各本的译文';
+    }
+    if (sourceTextArea) {
+        sourceTextArea.placeholder = enabled ? '把整部经的原文粘贴到这里…' : '请输入要翻译的佛教文本...';
+    }
+    translateBtn.innerHTML = enabled
+        ? '<i class="fas fa-book"></i> 逐块翻译'
+        : '<i class="fas fa-language"></i> 翻译';
+    updateCharCount();
+}
+
+function textLimit() {
+    return documentModeEnabled() ? DOCUMENT_TEXT_LIMIT : SHORT_TEXT_LIMIT;
+}
+
+function resetDocumentRun() {
+    documentRun.active = false;
+    documentRun.iterator = null;
+    documentRun.entries = [];
+    documentRun.total = 0;
+    documentRun.paused = false;
+    documentRun.stopped = false;
+    if (docChunks) docChunks.textContent = '';
+    if (docNote) docNote.textContent = '';
+    setDocButtons({ continue: false, stop: false, export: false });
+    updateDocProgress(0, 0);
+}
+
+function setDocButtons(state) {
+    if (docContinueBtn) docContinueBtn.hidden = !state.continue;
+    if (docStopBtn) docStopBtn.hidden = !state.stop;
+    if (docExportBtn) docExportBtn.hidden = !state.export;
+}
+
+function updateDocProgress(done, total) {
+    if (docProgressFill) {
+        docProgressFill.style.width = total > 0 ? `${Math.round((done / total) * 100)}%` : '0%';
+    }
+    if (docProgressText) {
+        docProgressText.textContent = total > 0 ? `${done} / ${total} 块` : '';
+    }
+}
+
+function appendDocChunk(entry, index) {
+    if (!docChunks) return;
+
+    const block = document.createElement('div');
+    block.className = 'doc-chunk';
+    block.innerHTML = `
+        <div class="doc-chunk-index">${index + 1}</div>
+        <div class="doc-chunk-body">
+            <pre class="doc-chunk-source">${escapeHtml(entry.chunk.text)}</pre>
+            <div class="doc-chunk-translation">${escapeHtml(entry.translation)}</div>
+        </div>
+    `;
+    docChunks.appendChild(block);
+    block.scrollIntoView({ block: 'nearest' });
+}
+
+async function handleDocumentTranslate(sourceText, sourceLang, targetLang) {
+    resetDocumentRun();
+    documentPanel.hidden = false;
+    documentRun.active = true;
+
+    // 术语索引在这里一次性备好，逐块查时就不必每块都等加载
+    let lexicon = getLoadedLexicon();
+    if (!lexicon) {
+        try {
+            lexicon = await loadLexicon();
+        } catch {
+            lexicon = null;
+        }
+    }
+
+    const runner = translateDocument(
+        {
+            text: sourceText,
+            glossaryFor: chunkText => (lexicon ? buildLexiconContext(chunkText, lexicon, { maxTerms: 8 }) : ''),
+            registerReminder: describeStyle(currentStyle)
+        },
+        async ({ chunk, context }) => translateText({
+            witnesses: { [sourceLang]: chunk.text },
+            sourceLang,
+            targetLang,
+            style: currentStyle,
+            preference: enginePreference(),
+            context
+        })
+    );
+
+    documentRun.iterator = runner;
+    await pumpDocumentRun();
+}
+
+async function pumpDocumentRun() {
+    const runner = documentRun.iterator;
+    if (!runner) return;
+
+    setDocButtons({ continue: false, stop: true, export: documentRun.entries.length > 0 });
+    translateBtn.disabled = true;
+    translateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 逐块翻译中...';
+
+    try {
+        while (true) {
+            const { value: event, done } = await runner.next();
+            if (done || !event) break;
+
+            if (event.type === 'start') {
+                documentRun.total = event.total;
+                updateDocProgress(0, event.total);
+                if (docNote) docNote.textContent = `全文切成 ${event.total} 块，每 ${PAUSE_EVERY_CHUNKS} 块停一次，方便中途改术语。`;
+                continue;
+            }
+
+            if (event.type === 'error') {
+                if (docNote) {
+                    docNote.textContent = `第 ${event.index + 1} 块失败：${describeTranslationError(event.error)}`;
+                }
+                showMessage(describeTranslationError(event.error), 'error');
+                break;
+            }
+
+            if (event.type === 'chunk') {
+                documentRun.entries.push({ chunk: event.chunk, translation: event.translation });
+                appendDocChunk(event, documentRun.entries.length - 1);
+                updateDocProgress(documentRun.entries.length, documentRun.total);
+                resultDiv.innerHTML = `<div class="translation-text">${escapeHtml(event.translation)}</div>`;
+
+                const finished = documentRun.entries.length >= documentRun.total;
+                if (!finished && documentRun.entries.length % PAUSE_EVERY_CHUNKS === 0) {
+                    documentRun.paused = true;
+                    break;
+                }
+                continue;
+            }
+
+            if (event.type === 'done') {
+                if (docNote) docNote.textContent = `全部 ${event.total} 块译完。`;
+                showMessage('整部翻译完成', 'success');
+                break;
+            }
+        }
+    } catch (error) {
+        console.error('整部经翻译出错:', error);
+        showMessage('翻译失败: ' + error.message, 'error');
+    } finally {
+        translateBtn.disabled = false;
+        updateDocumentMode();
+
+        const hasResults = documentRun.entries.length > 0;
+        const finished = documentRun.total > 0 && documentRun.entries.length >= documentRun.total;
+        setDocButtons({
+            continue: documentRun.paused && !documentRun.stopped && !finished,
+            stop: false,
+            export: hasResults
+        });
+        if (documentRun.paused && !finished && docNote) {
+            docNote.textContent = `已译 ${documentRun.entries.length} / ${documentRun.total} 块。`
+                + '这里停一下：看看术语对不对，要调就改译风设置再继续。';
+        }
+        documentRun.active = documentRun.paused && !finished;
+    }
+}
+
+async function resumeDocumentRun() {
+    if (!documentRun.iterator || documentRun.stopped) return;
+    documentRun.paused = false;
+    await pumpDocumentRun();
+}
+
+async function stopDocumentRun() {
+    documentRun.stopped = true;
+    documentRun.paused = false;
+    if (documentRun.iterator?.return) {
+        await documentRun.iterator.return();
+    }
+    documentRun.iterator = null;
+    documentRun.active = false;
+    setDocButtons({ continue: false, stop: false, export: documentRun.entries.length > 0 });
+    if (docNote) {
+        docNote.textContent = `已停止，保留了前 ${documentRun.entries.length} 块的译文，可以导出。`;
+    }
+}
+
+function exportDocument() {
+    if (documentRun.entries.length === 0) {
+        showMessage('还没有可导出的译文', 'warning');
+        return;
+    }
+
+    const dateStamp = new Date().toISOString().slice(0, 10);
+    const markdown = renderDocumentMarkdown(documentRun.entries, {
+        title: `整部翻译 ${dateStamp}`,
+        engine: resultMeta && !resultMeta.hidden ? resultMeta.textContent : '',
+        style: describeStyle(currentStyle)
+    });
+
+    const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `buddhist-document-${dateStamp}.md`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showMessage('对照稿已导出', 'success');
 }
 
 // --- 引擎提示 ---
@@ -270,6 +540,11 @@ async function handleTranslate() {
 
     if (sourceLang === targetLang && sourceLang !== 'auto') {
         showMessage('源语言和目标语言不能相同', 'warning');
+        return;
+    }
+
+    if (documentModeEnabled()) {
+        await handleDocumentTranslate(sourceText, sourceLang, targetLang);
         return;
     }
 
@@ -420,12 +695,13 @@ async function handleProvenance() {
 // --- 工具函数 ---
 
 function updateCharCount() {
-    const limited = limitTextLength(sourceTextArea.value, 5000);
+    const limit = textLimit();
+    const limited = limitTextLength(sourceTextArea.value, limit);
     if (limited.truncated) {
         sourceTextArea.value = limited.text;
     }
 
-    charCount.textContent = `${limited.length} / 5000`;
+    charCount.textContent = `${limited.length} / ${limit}`;
     if (limited.truncated) {
         charCount.style.color = '#e74c3c';
     } else {
@@ -444,6 +720,8 @@ function clearInput() {
     if (resultMeta) resultMeta.hidden = true;
     if (lexiconPanel) lexiconPanel.hidden = true;
     hideProvenance();
+    resetDocumentRun();
+    if (documentPanel) documentPanel.hidden = true;
     updateCharCount();
 }
 

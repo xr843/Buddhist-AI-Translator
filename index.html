@@ -153,13 +153,17 @@
                         <div class="style-grid" id="style-grid"></div>
                     </details>
 
-                    <!-- 多本合参：同一段落的多语种写本一起送入 -->
+                    <!-- 模式：多本合参 / 整部经 -->
                     <div class="witness-bar">
                         <label class="witness-switch" for="multi-witness-toggle">
                             <input type="checkbox" id="multi-witness-toggle">
                             <span><i class="fas fa-layer-group"></i> 多本合参</span>
                         </label>
-                        <span class="witness-hint">同一段落的梵／巴／汉／藏写本一起送入，得到一份权衡各本的译文</span>
+                        <label class="witness-switch" for="document-mode-toggle">
+                            <input type="checkbox" id="document-mode-toggle">
+                            <span><i class="fas fa-book"></i> 整部经</span>
+                        </label>
+                        <span class="witness-hint" id="mode-hint">同一段落的梵／巴／汉／藏写本一起送入，得到一份权衡各本的译文</span>
                     </div>
                     <div class="witness-grid" id="witness-grid" hidden>
                         <div class="witness-field" data-lang="sa">
@@ -251,6 +255,25 @@
 
                         <!-- 藏经溯源结果 -->
                         <div class="provenance-panel" id="provenance-panel" hidden></div>
+                    </div>
+
+                    <!-- 整部经：逐块进度与原文译文对照 -->
+                    <div class="document-panel" id="document-panel" hidden>
+                        <div class="doc-toolbar">
+                            <div class="doc-progress">
+                                <div class="doc-progress-track"><div class="doc-progress-fill" id="doc-progress-fill"></div></div>
+                                <span class="doc-progress-text" id="doc-progress-text"></span>
+                            </div>
+                            <div class="doc-actions">
+                                <button class="btn btn-primary" id="doc-continue" hidden>继续</button>
+                                <button class="btn btn-secondary" id="doc-stop" hidden>停止</button>
+                                <button class="btn btn-secondary" id="doc-export" hidden>
+                                    <i class="fas fa-file-download"></i> 导出对照
+                                </button>
+                            </div>
+                        </div>
+                        <p class="panel-note" id="doc-note"></p>
+                        <div class="doc-chunks" id="doc-chunks"></div>
                     </div>
                 </div>
             </div>

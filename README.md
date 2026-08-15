@@ -30,6 +30,7 @@
 | 特性 | 说明 |
 |------|------|
 | **佛典专用引擎** | 默认走 MITRA，梵／巴／汉／藏四种佛典语言无需密钥即可翻译 |
+| **整部经翻译** | 整篇粘进来按句切块逐块翻译，**把已译出的上文回喂给下一块**压住术语漂移；每 5 块暂停可改术语，随时停止，导出原文译文对照 `.md` |
 | **多本合参** | 同一段落的多语种写本一起送入，得到一份权衡各本的译文，可指定侧重写本 |
 | **译风控制** | 文本类别 + 译法／术语呈现／语体／注释深度，五维组合成给模型的指令 |
 | **出处溯源** | 一键在藏经语料中检索原文，返回经名、`segmentnr` 与阅读室深链 |
@@ -159,6 +160,7 @@ mined from aligned canonical parallels.
 | Feature | Description |
 |---------|-------------|
 | **Domain engine, no key** | MITRA translates Sanskrit, Pali, Classical Chinese and Tibetan out of the box |
+| **Whole-text translation** | Paste an entire work; it is split on sentence boundaries and translated chunk by chunk, **feeding each chunk the translation of the one before it** so terminology does not drift. Pauses every 5 chunks, stops on demand, exports a source/translation `.md` |
 | **Multi-witness translation** | Feed several language witnesses of one passage; get a single synthesised translation, optionally weighted toward a base text |
 | **Style control** | Source category plus literalness / term rendering / register / gloss depth, compiled into the model instruction |
 | **Provenance lookup** | Search the canonical corpus for the source passage; get titles, segment IDs and reading-room deep links |
