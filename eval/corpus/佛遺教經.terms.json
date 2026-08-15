@@ -1,0 +1,283 @@
+{
+  "sourceFile": "佛遺教經.zh.txt",
+  "selectionRule": "在全文中出现次数 >= 3 的实词/专名；已人工核对，排除虚词（如「如是」「一切」）与嵌套子串（如「忘念」是「不忘念」的子串，只保留「不忘念」）",
+  "termCount": 23,
+  "entries": [
+    {
+      "term": "比丘",
+      "gloss": "bhikṣu / 出家受具足戒的男性僧人",
+      "occurrences": 24,
+      "lines": [
+        2,
+        11,
+        16,
+        22,
+        24,
+        26,
+        29,
+        35,
+        38,
+        47,
+        50,
+        54,
+        60,
+        66,
+        72,
+        76,
+        80,
+        84,
+        90,
+        91,
+        95,
+        109,
+        117,
+        125
+      ]
+    },
+    {
+      "term": "知足",
+      "gloss": "contentment / 對已有的資具、境遇感到滿足，不多求",
+      "occurrences": 10,
+      "lines": [
+        8,
+        60,
+        61,
+        62,
+        63,
+        64
+      ]
+    },
+    {
+      "term": "智慧",
+      "gloss": "prajñā-wisdom / 如實照見諸法的智慧",
+      "occurrences": 8,
+      "lines": [
+        10,
+        40,
+        81,
+        84,
+        85,
+        87,
+        88,
+        122
+      ]
+    },
+    {
+      "term": "功德",
+      "gloss": "guṇa-puṇya / 修行、持戒、布施等所成就的德用",
+      "occurrences": 8,
+      "lines": [
+        13,
+        14,
+        35,
+        38,
+        43,
+        55,
+        76,
+        95
+      ]
+    },
+    {
+      "term": "少欲",
+      "gloss": "having few desires / 對未得之物不多求",
+      "occurrences": 7,
+      "lines": [
+        54,
+        55,
+        56,
+        57,
+        58
+      ]
+    },
+    {
+      "term": "精進",
+      "gloss": "vīrya-diligence / 勇猛勤修善法不懈",
+      "occurrences": 6,
+      "lines": [
+        22,
+        72,
+        74,
+        97,
+        122
+      ]
+    },
+    {
+      "term": "世尊",
+      "gloss": "Bhagavat / 對佛陀的尊稱",
+      "occurrences": 6,
+      "lines": [
+        96,
+        101,
+        105,
+        108,
+        112,
+        115
+      ]
+    },
+    {
+      "term": "解脫",
+      "gloss": "vimokṣa-liberation / 脫離煩惱繫縛",
+      "occurrences": 4,
+      "lines": [
+        9,
+        48,
+        84,
+        122
+      ]
+    },
+    {
+      "term": "煩惱",
+      "gloss": "kleśa-afflictions / 擾亂身心、招感苦果的心所",
+      "occurrences": 4,
+      "lines": [
+        31,
+        32,
+        76,
+        85
+      ]
+    },
+    {
+      "term": "淨戒",
+      "gloss": "pure precepts / 清淨無染的戒律",
+      "occurrences": 4,
+      "lines": [
+        4,
+        11,
+        12,
+        13
+      ]
+    },
+    {
+      "term": "戲論",
+      "gloss": "prapañca / 虛妄分別、無意義的言論思辨",
+      "occurrences": 4,
+      "lines": [
+        90,
+        91,
+        92,
+        93
+      ]
+    },
+    {
+      "term": "善法",
+      "gloss": "kuśala-dharma / 順理益世的善的教法、行為",
+      "occurrences": 4,
+      "lines": [
+        12,
+        29,
+        36,
+        42
+      ]
+    },
+    {
+      "term": "五欲",
+      "gloss": "the five desires / 財色名食睡，或色聲香味觸五塵引生之欲",
+      "occurrences": 4,
+      "lines": [
+        16,
+        17,
+        63,
+        77
+      ]
+    },
+    {
+      "term": "五根",
+      "gloss": "the five faculties (here: 眼耳鼻舌身) / 五種感官機能",
+      "occurrences": 4,
+      "lines": [
+        16,
+        17,
+        19
+      ]
+    },
+    {
+      "term": "世間",
+      "gloss": "loka-the world / 有為生滅的世俗世界",
+      "occurrences": 4,
+      "lines": [
+        30,
+        69,
+        80,
+        125
+      ]
+    },
+    {
+      "term": "瞋恚",
+      "gloss": "dveṣa-anger, hatred / 三毒之一，忿怒怨恨",
+      "occurrences": 3,
+      "lines": [
+        42,
+        43,
+        44
+      ]
+    },
+    {
+      "term": "滅度",
+      "gloss": "parinirvāṇa / 圓寂、入滅",
+      "occurrences": 3,
+      "lines": [
+        110,
+        112,
+        126
+      ]
+    },
+    {
+      "term": "放逸",
+      "gloss": "pramāda-heedlessness / 縱恣身心不自約束",
+      "occurrences": 3,
+      "lines": [
+        16,
+        20,
+        95
+      ]
+    },
+    {
+      "term": "持戒",
+      "gloss": "upholding the precepts / 受持戒律",
+      "occurrences": 3,
+      "lines": [
+        8,
+        32,
+        39
+      ]
+    },
+    {
+      "term": "慚恥",
+      "gloss": "sense of shame / 對自身過惡的羞恥心",
+      "occurrences": 3,
+      "lines": [
+        34,
+        35
+      ]
+    },
+    {
+      "term": "怨賊",
+      "gloss": "enemy/thief (metaphor) / 喻煩惱或加害者",
+      "occurrences": 3,
+      "lines": [
+        20,
+        95,
+        123
+      ]
+    },
+    {
+      "term": "不忘念",
+      "gloss": "non-forgetfulness / mindfulness / 於所緣不忘失正念",
+      "occurrences": 3,
+      "lines": [
+        76,
+        78
+      ]
+    },
+    {
+      "term": "四諦",
+      "gloss": "the Four Noble Truths / 苦集滅道四聖諦",
+      "occurrences": 3,
+      "lines": [
+        99,
+        106,
+        109
+      ]
+    }
+  ]
+}

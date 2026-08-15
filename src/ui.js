@@ -13,7 +13,7 @@ import {
 import { isMitraReachable, searchCanonical } from './mitra.js';
 import { buildLexiconContext, findLexiconTerms, formatLexiconEntry, getLoadedLexicon, loadLexicon } from './lexicon.js';
 import { STYLE_DIMENSIONS, defaultStyle, describeStyle, normalizeStyle } from './style.js';
-import { renderDocumentMarkdown, translateDocument } from './document.js';
+import { MIN_INTERVAL_MS, renderDocumentMarkdown, translateDocument } from './document.js';
 import { initSpeech, startVoiceInput, speakResult } from './speech.js';
 
 // DOM 元素
@@ -346,7 +346,9 @@ async function handleDocumentTranslate(sourceText, sourceLang, targetLang) {
         {
             text: sourceText,
             glossaryFor: chunkText => (lexicon ? buildLexiconContext(chunkText, lexicon, { maxTerms: 8 }) : ''),
-            registerReminder: describeStyle(currentStyle)
+            registerReminder: describeStyle(currentStyle),
+            // 实测上游约 10 次/分钟就限流，不限速的话二三十块的经跑到一半就 429
+            minIntervalMs: MIN_INTERVAL_MS
         },
         async ({ chunk, context }) => translateText({
             witnesses: { [sourceLang]: chunk.text },
@@ -379,6 +381,15 @@ async function pumpDocumentRun() {
                 documentRun.total = event.total;
                 updateDocProgress(0, event.total);
                 if (docNote) docNote.textContent = `全文切成 ${event.total} 块，每 ${PAUSE_EVERY_CHUNKS} 块停一次，方便中途改术语。`;
+                continue;
+            }
+
+            if (event.type === 'retry') {
+                // 上游限流不是失败，是要等 —— 让人看得见在等什么、还要等多久
+                if (docNote) {
+                    docNote.textContent = `第 ${event.index + 1} 块遇到上游限流，`
+                        + `${Math.round(event.waitMs / 1000)} 秒后自动重试（第 ${event.attempt}/${event.maxRetries} 次）。`;
+                }
                 continue;
             }
 

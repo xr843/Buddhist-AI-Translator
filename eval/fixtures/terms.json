@@ -1,0 +1,15 @@
+{
+ "sourceFile": "fixtures",
+ "selectionRule": "验脚本用的最小术语表",
+ "termCount": 2,
+ "entries": [
+  {
+   "term": "比丘",
+   "occurrences": 4
+  },
+  {
+   "term": "少欲",
+   "occurrences": 1
+  }
+ ]
+}

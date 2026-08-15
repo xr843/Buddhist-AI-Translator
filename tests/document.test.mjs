@@ -6,6 +6,7 @@ const {
     MAX_CONTEXT_WORDS,
     buildRollingContext,
     chunkDocument,
+    isRetryableError,
     renderDocumentMarkdown,
     splitSentences,
     translateDocument
@@ -104,6 +105,37 @@ test('chunkDocument breaks at paragraph boundaries even when the chunk is not fu
     assert.equal(chunks.length, 2);
     assert.equal(chunks[0].text, '第一段。');
     assert.equal(chunks[1].text, '第二段。');
+});
+
+test('chunkDocument merges a stubby paragraph tail back into the chunk before it', () => {
+    // 实跑《佛遺教經》撞出来的形状：前一块正好切满，段落最后剩一句「是名少欲。」，
+    // 单独成块既浪费一次请求，又丢了它总结的那一段
+    const paragraph = `${'甲乙丙丁戊己庚辛壬癸子丑寅卯。'.repeat(5)}是名少欲。`;
+    const chunks = chunkDocument(paragraph);
+
+    assert.ok(chunks.length >= 1);
+    const tail = chunks.at(-1);
+    assert.ok(tail.chars >= 20, `orphan tail survived: ${tail.text}`);
+    assert.ok(tail.text.endsWith('是名少欲。'), 'the summary line must ride along with what it summarises');
+    assert.ok(tail.sentences.length > 1);
+});
+
+test('chunkDocument leaves the tail alone when merging would blow the ceiling', () => {
+    // 前一块已经很长，再并进来就过头了，这时宁可留着短尾巴
+    const long = '這是一個相當長的句子用來把一塊撐到接近上限這樣就不該再併入更多內容了。';
+    const paragraph = `${long.repeat(4)}短句。`;
+    const chunks = chunkDocument(paragraph);
+
+    const tail = chunks.at(-1);
+    assert.ok(tail.chars <= 340, 'a merge must never exceed the merge ceiling');
+});
+
+test('chunkDocument does not merge across a paragraph boundary', () => {
+    const chunks = chunkDocument('前段第一句。前段第二句。\n\n短。');
+
+    // 「短。」自己是一整段，没有同段的前块可并 —— 段落边界比合并优先
+    assert.equal(chunks.length, 2);
+    assert.equal(chunks[1].text, '短。');
 });
 
 test('chunkDocument indexes chunks consecutively from zero', () => {
@@ -205,6 +237,12 @@ async function drain(iterator) {
     return events;
 }
 
+/** 测试里不真等 —— 只记录等了多久。 */
+function fakeClock() {
+    const waits = [];
+    return { waits, sleep: async ms => { waits.push(ms); } };
+}
+
 test('translateDocument feeds each chunk the translation of the one before it', async () => {
     const seen = [];
     const events = await drain(translateDocument(
@@ -252,12 +290,14 @@ test('translateDocument passes the per-chunk glossary through glossaryFor', asyn
 });
 
 test('translateDocument stops at the first failure and reports which chunk broke', async () => {
+    const clock = fakeClock();
     const events = await drain(translateDocument(
-        { text: AMITABHA },
+        { text: AMITABHA, maxRetries: 0 },
         async ({ chunk }) => {
             if (chunk.index === 1) throw new Error('upstream 503');
             return { text: `T${chunk.index}` };
-        }
+        },
+        clock
     ));
 
     const failure = events.find(e => e.type === 'error');
@@ -271,12 +311,73 @@ test('translateDocument stops at the first failure and reports which chunk broke
 
 test('translateDocument treats a blank translation as a failure', async () => {
     const events = await drain(translateDocument(
-        { text: '如是我聞。' },
+        { text: '如是我聞。', maxRetries: 0 },
         async () => ({ text: '   ' })
     ));
 
     assert.equal(events.some(e => e.type === 'error'), true);
     assert.equal(events.some(e => e.type === 'done'), false);
+});
+
+test('translateDocument retries a rate-limited chunk instead of abandoning the run', async () => {
+    // 实测上游约 10 次请求后就回 429，一部经二三十块，不重试根本跑不完
+    const clock = fakeClock();
+    let attempts = 0;
+    const events = await drain(translateDocument(
+        { text: '如是我聞。', retryDelayMs: 1000 },
+        async () => {
+            attempts += 1;
+            if (attempts < 3) throw new Error('MITRA 请求失败: 429');
+            return { text: '译文' };
+        },
+        clock
+    ));
+
+    assert.equal(attempts, 3);
+    const retries = events.filter(e => e.type === 'retry');
+    assert.equal(retries.length, 2, 'each retry must be announced so the UI can show a countdown');
+    // 退避要递增，别用同一个间隔去撞同一堵墙
+    assert.deepEqual(clock.waits, [1000, 2000]);
+    assert.equal(events.some(e => e.type === 'done'), true);
+    assert.equal(events.find(e => e.type === 'chunk').translation, '译文');
+});
+
+test('translateDocument gives up immediately on an error that retrying cannot fix', async () => {
+    const clock = fakeClock();
+    let attempts = 0;
+    const events = await drain(translateDocument(
+        { text: '如是我聞。' },
+        async () => {
+            attempts += 1;
+            throw new Error('MITRA 不支持该目标语种');
+        },
+        clock
+    ));
+
+    assert.equal(attempts, 1, 'a non-retryable error must not be retried');
+    assert.deepEqual(clock.waits, []);
+    assert.equal(events.some(e => e.type === 'error'), true);
+});
+
+test('translateDocument paces its calls so a long text does not trip the rate limit', async () => {
+    const clock = fakeClock();
+    await drain(translateDocument(
+        { text: '第一段。\n\n第二段。\n\n第三段。', minIntervalMs: 6000 },
+        async ({ chunk }) => ({ text: `T${chunk.index}` }),
+        clock
+    ));
+
+    // 三块之间隔两次，第一块不必等
+    assert.deepEqual(clock.waits, [6000, 6000]);
+});
+
+test('isRetryableError tells rate limits and outages apart from bad requests', () => {
+    assert.equal(isRetryableError(new Error('MITRA 请求失败: 429')), true);
+    assert.equal(isRetryableError(new Error('MITRA 请求失败: 503')), true);
+    assert.equal(isRetryableError(new Error('MITRA 请求超时，请稍后重试')), true);
+    assert.equal(isRetryableError(new Error('fetch failed')), true);
+    assert.equal(isRetryableError(new Error('MITRA 请求失败: 400')), false);
+    assert.equal(isRetryableError(new Error('MITRA 不支持该目标语种')), false);
 });
 
 test('translateDocument can be abandoned part-way without running the rest', async () => {

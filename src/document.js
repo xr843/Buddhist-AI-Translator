@@ -19,6 +19,16 @@ export const MAX_SENTENCES_PER_CHUNK = 5;
 export const MAX_CHARS_PER_CHUNK = 260;
 /** 单句超过这个长度就只能退让切分 —— 多半是没有句读的偈颂。 */
 export const HARD_SENTENCE_LIMIT = 600;
+/**
+ * 段末剩下的尾巴短于这个长度就并回上一块。
+ *
+ * 实跑《佛遺教經》时撞出来的：前一块正好切满，段落最后剩一句「是名少欲。」，
+ * 就成了一个 5 字的孤块。这种总结句单独送上去既浪费一次请求，又丢了它总结的那一段。
+ */
+export const MIN_TAIL_CHARS = 30;
+/** 并回去时允许略微超出常规上限，超得太多就宁可留着孤块。 */
+export const MERGE_CEILING_SENTENCES = 7;
+export const MERGE_CEILING_CHARS = 340;
 /** context 的字数上限。官方文档建议 ~400 词。 */
 export const MAX_CONTEXT_WORDS = 400;
 /** 回喂几块已译上文。 */
@@ -100,22 +110,49 @@ export function chunkDocument(text, options = {}) {
     const maxChars = options.maxChars || MAX_CHARS_PER_CHUNK;
 
     const chunks = [];
+    // 一段之内的块先攒在这里，段末决定要不要把过短的尾巴并回去
+    let paragraphChunks = [];
     let current = [];
     let currentChars = 0;
     let currentForced = false;
 
     const flush = () => {
         if (current.length === 0) return;
-        chunks.push({
-            index: chunks.length,
+        paragraphChunks.push({
             sentences: current.slice(),
-            text: current.join('\n'),
             chars: currentChars,
             forced: currentForced
         });
         current = [];
         currentChars = 0;
         currentForced = false;
+    };
+
+    const closeParagraph = () => {
+        flush();
+        if (paragraphChunks.length >= 2) {
+            const tail = paragraphChunks[paragraphChunks.length - 1];
+            const previous = paragraphChunks[paragraphChunks.length - 2];
+            const mergedSentences = previous.sentences.length + tail.sentences.length;
+            const mergedChars = previous.chars + tail.chars;
+            const orphan = tail.chars < MIN_TAIL_CHARS;
+            if (orphan && mergedSentences <= MERGE_CEILING_SENTENCES && mergedChars <= MERGE_CEILING_CHARS) {
+                previous.sentences.push(...tail.sentences);
+                previous.chars = mergedChars;
+                previous.forced = previous.forced || tail.forced;
+                paragraphChunks.pop();
+            }
+        }
+        for (const chunk of paragraphChunks) {
+            chunks.push({
+                index: chunks.length,
+                sentences: chunk.sentences,
+                text: chunk.sentences.join('\n'),
+                chars: chunk.chars,
+                forced: chunk.forced
+            });
+        }
+        paragraphChunks = [];
     };
 
     for (const paragraph of splitParagraphs(text)) {
@@ -129,9 +166,9 @@ export function chunkDocument(text, options = {}) {
             if (sentence.forced) currentForced = true;
         }
         // 段落边界一定断开，别让偈颂和长行散文粘在一块里
-        flush();
+        closeParagraph();
     }
-    flush();
+    closeParagraph();
 
     return chunks;
 }
@@ -207,6 +244,25 @@ function renderSection(title, body) {
 }
 
 /**
+ * 上游限流后隔多久再试。
+ *
+ * 实测（2026-08-15）：约 10 次请求后开始回 429，且**不带 Retry-After**，
+ * 约 80 秒后恢复。一部经二三十块，不退避重试就根本跑不完一遍。
+ */
+export const RETRY_DELAY_MS = 20000;
+export const MAX_RETRIES = 4;
+/** 两次请求之间的最小间隔，用来别把上游打到限流。 */
+export const MIN_INTERVAL_MS = 6000;
+
+/** 值得重试的是限流与临时故障；参数错、语种不支持这类重试多少次都一样。 */
+export function isRetryableError(error) {
+    const message = error?.message || String(error || '');
+    return /\b(429|5\d\d)\b/.test(message) || /超时|timeout|fetch failed|network/i.test(message);
+}
+
+const defaultSleep = ms => new Promise(resolve => { setTimeout(resolve, ms); });
+
+/**
  * 逐块翻译一部文档。
  *
  * 做成异步生成器，是因为调用方要能**中途停下**：官方文档说长文翻译最大的失败模式
@@ -216,14 +272,21 @@ function renderSection(title, body) {
  * @param {object} job
  * @param {string} job.text 全文
  * @param {(chunk: object) => Promise<{text:string}>} translateChunk 注入的翻译函数
+ * @param {object} [deps] 注入 sleep，测试里换成不真等的实现
  */
-export async function* translateDocument(job, translateChunk) {
+export async function* translateDocument(job, translateChunk, deps = {}) {
+    const sleep = deps.sleep || defaultSleep;
+    const minInterval = Number.isFinite(job?.minIntervalMs) ? job.minIntervalMs : 0;
+    const maxRetries = Number.isFinite(job?.maxRetries) ? job.maxRetries : MAX_RETRIES;
+    const retryDelay = Number.isFinite(job?.retryDelayMs) ? job.retryDelayMs : RETRY_DELAY_MS;
+
     const chunks = chunkDocument(job.text, job);
     const done = [];
 
     yield { type: 'start', total: chunks.length, chunks };
 
     for (const chunk of chunks) {
+        if (minInterval > 0 && chunk.index > 0) await sleep(minInterval);
         const context = buildRollingContext({
             priorTranslations: done.map(entry => entry.translation),
             referenceTranslation: job.referenceTranslation,
@@ -235,22 +298,36 @@ export async function* translateDocument(job, translateChunk) {
         });
 
         let translation;
-        try {
-            const outcome = await translateChunk({ chunk, context, index: chunk.index, total: chunks.length });
-            translation = typeof outcome === 'string' ? outcome : outcome?.text;
-        } catch (error) {
-            yield { type: 'error', index: chunk.index, total: chunks.length, chunk, error };
-            return { chunks: done, aborted: true };
-        }
+        let lastError = null;
+        for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+            try {
+                const outcome = await translateChunk({ chunk, context, index: chunk.index, total: chunks.length });
+                translation = typeof outcome === 'string' ? outcome : outcome?.text;
+                lastError = translation && translation.trim() ? null : new Error('翻译结果为空');
+            } catch (error) {
+                lastError = error;
+            }
 
-        if (typeof translation !== 'string' || !translation.trim()) {
+            if (!lastError) break;
+            // 限流与临时故障值得等一等；参数错重试多少次都一样，立刻放弃
+            if (attempt >= maxRetries || !isRetryableError(lastError)) break;
+
+            const waitMs = retryDelay * (attempt + 1);
             yield {
-                type: 'error',
+                type: 'retry',
                 index: chunk.index,
                 total: chunks.length,
                 chunk,
-                error: new Error('翻译结果为空')
+                attempt: attempt + 1,
+                maxRetries,
+                waitMs,
+                error: lastError
             };
+            await sleep(waitMs);
+        }
+
+        if (lastError) {
+            yield { type: 'error', index: chunk.index, total: chunks.length, chunk, error: lastError };
             return { chunks: done, aborted: true };
         }
 
