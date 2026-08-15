@@ -10,8 +10,6 @@ import {
     translateText,
     translateWithBuiltIn
 } from './translator.js';
-import { isMitraReachable, searchCanonical } from './mitra.js';
-import { findLexiconTerms, formatLexiconEntry, getLoadedLexicon, loadLexicon } from './lexicon.js';
 import { STYLE_DIMENSIONS, defaultStyle, describeStyle, normalizeStyle } from './style.js';
 import { initSpeech, startVoiceInput, speakResult } from './speech.js';
 
@@ -19,7 +17,7 @@ import { initSpeech, startVoiceInput, speakResult } from './speech.js';
 let sourceTextArea, targetSelect, sourceSelect, translateBtn, resultDiv, charCount;
 let sourceLabelSpan, targetLabelSpan;
 let engineSelect, styleGrid, styleSummary, multiWitnessToggle, witnessGrid, focusSelect;
-let resultMeta, lexiconPanel, provenancePanel, provenanceBtn;
+let resultMeta;
 
 let currentStyle = defaultStyle();
 
@@ -48,9 +46,6 @@ export function initializeUI() {
     witnessGrid = document.getElementById('witness-grid');
     focusSelect = document.getElementById('focus-select');
     resultMeta = document.getElementById('result-meta');
-    lexiconPanel = document.getElementById('lexicon-panel');
-    provenancePanel = document.getElementById('provenance-panel');
-    provenanceBtn = document.getElementById('provenance-btn');
 
     // 初始化语音模块
     initSpeech(
@@ -83,7 +78,6 @@ function bindEvents() {
     document.getElementById('paste-btn').addEventListener('click', pasteText);
     document.getElementById('swap-btn').addEventListener('click', swapLanguages);
 
-    if (provenanceBtn) provenanceBtn.addEventListener('click', handleProvenance);
     if (engineSelect) engineSelect.addEventListener('change', updateEngineHint);
     if (multiWitnessToggle) multiWitnessToggle.addEventListener('change', updateWitnessVisibility);
     if (sourceSelect) sourceSelect.addEventListener('change', updateWitnessVisibility);
@@ -274,7 +268,6 @@ async function handleTranslate() {
     }
 
     translateBtn.disabled = true;
-    hideProvenance();
 
     try {
         translateBtn.innerHTML = '<svg class="icon icon-spin" aria-hidden="true"><use href="#i-spinner"></use></svg> 翻译中...';
@@ -291,7 +284,6 @@ async function handleTranslate() {
             resultDiv.innerHTML = `<div class="translation-text">${escapeHtml(outcome.text)}</div>`;
             showResultMeta(outcome);
             if (outcome.fromCache) showMessage('使用缓存结果，响应更快！', 'success');
-            await showLexiconPanel(sourceText);
         } catch (apiError) {
             console.warn('API翻译失败，使用内置翻译:', apiError.message);
             const result = translateWithBuiltIn(sourceText, sourceLang, targetLang);
@@ -320,103 +312,6 @@ function showResultMeta(outcome) {
     resultMeta.hidden = false;
 }
 
-// --- 术语对照 ---
-
-async function showLexiconPanel(text) {
-    if (!lexiconPanel) return;
-
-    let lexicon = getLoadedLexicon();
-    if (!lexicon) {
-        try {
-            lexicon = await loadLexicon();
-        } catch {
-            lexiconPanel.hidden = true;
-            return;
-        }
-    }
-
-    const matches = findLexiconTerms(text, lexicon, { limit: 12 });
-    if (matches.length === 0) {
-        lexiconPanel.hidden = true;
-        return;
-    }
-
-    const rows = matches.map(entry => {
-        const witnesses = (entry.src || []).join('、');
-        return `<li><span class="lexicon-term">${escapeHtml(formatLexiconEntry(entry))}</span>`
-            + `<span class="lexicon-meta">${escapeHtml(`${entry.n} 次${witnesses ? ` · ${witnesses}` : ''}`)}</span></li>`;
-    }).join('');
-
-    lexiconPanel.innerHTML = `
-        <div class="panel-title"><svg class="icon" aria-hidden="true"><use href="#i-language"></use></svg> 本文术语的实证对照</div>
-        <ul class="lexicon-list">${rows}</ul>
-        <p class="panel-note">对照数据来自平行语料实际出现的对译，未逐条人工审定；次数越高越可靠。</p>
-    `;
-    lexiconPanel.hidden = false;
-}
-
-// --- 藏经溯源 ---
-
-function hideProvenance() {
-    if (provenancePanel) {
-        provenancePanel.hidden = true;
-        provenancePanel.textContent = '';
-    }
-}
-
-async function handleProvenance() {
-    if (!provenancePanel) return;
-
-    const text = validateInput(sourceTextArea.value.trim());
-    if (!text) {
-        showMessage('请先输入要溯源的原文', 'warning');
-        return;
-    }
-
-    if (!isMitraReachable()) {
-        provenancePanel.hidden = false;
-        provenancePanel.innerHTML = '<div class="panel-title"><svg class="icon" aria-hidden="true"><use href="#i-book"></use></svg> 藏经溯源</div>'
-            + '<p class="panel-note">藏经检索需要先部署 Worker 中转（见 worker/README.md）。'
-            + '浏览器暂时无法直连 Dharmamitra —— 对方在实际响应里重复发送了 CORS 头。</p>';
-        return;
-    }
-
-    provenanceBtn.disabled = true;
-    provenancePanel.hidden = false;
-    provenancePanel.innerHTML = '<div class="panel-title"><svg class="icon icon-spin" aria-hidden="true"><use href="#i-spinner"></use></svg> 正在藏经语料中检索…</div>';
-
-    try {
-        const hits = await searchCanonical({ text, sourceLang: sourceSelect.value });
-        if (hits.length === 0) {
-            provenancePanel.innerHTML = '<div class="panel-title"><svg class="icon" aria-hidden="true"><use href="#i-book"></use></svg> 藏经溯源</div>'
-                + '<p class="panel-note">语料中没有检索到这段文字。可能是现代文、意引，或不在已收录的范围内。</p>';
-            return;
-        }
-
-        const rows = hits.map(hit => {
-            const title = escapeHtml(hit.title || hit.source || '未题');
-            const snippet = escapeHtml(hit.text.slice(0, 120));
-            const segment = escapeHtml(hit.segmentnr);
-            const link = hit.link
-                ? `<a href="${escapeHtml(hit.link)}" target="_blank" rel="noopener noreferrer">查看原文</a>`
-                : '';
-            return `<li><div class="prov-title">${title} <span class="prov-seg">${segment}</span></div>`
-                + `<div class="prov-text">${snippet}</div><div class="prov-link">${link}</div></li>`;
-        }).join('');
-
-        provenancePanel.innerHTML = `
-            <div class="panel-title"><svg class="icon" aria-hidden="true"><use href="#i-book"></use></svg> 藏经溯源（${hits.length} 条）</div>
-            <ul class="provenance-list">${rows}</ul>
-            <p class="panel-note">检索与深链由 Dharmamitra 语料库提供。</p>
-        `;
-    } catch (error) {
-        provenancePanel.innerHTML = '<div class="panel-title"><svg class="icon" aria-hidden="true"><use href="#i-book"></use></svg> 藏经溯源</div>'
-            + `<p class="panel-note">${escapeHtml(describeTranslationError(error))}</p>`;
-    } finally {
-        provenanceBtn.disabled = false;
-    }
-}
-
 // --- 工具函数 ---
 
 function updateCharCount() {
@@ -442,8 +337,6 @@ function clearInput() {
     sourceTextArea.value = '';
     resultDiv.innerHTML = '<div class="placeholder">翻译结果将显示在这里...</div>';
     if (resultMeta) resultMeta.hidden = true;
-    if (lexiconPanel) lexiconPanel.hidden = true;
-    hideProvenance();
     updateCharCount();
 }
 

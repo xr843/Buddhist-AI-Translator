@@ -567,7 +567,7 @@
     font-family: var(--font-sans);
 }
 
-/* ============================= 结果元信息 / 实证术语 / 藏经溯源 ============================= */
+/* ============================= 结果元信息 ============================= */
 
 .result-meta {
     margin-top: var(--space-2);
@@ -575,94 +575,6 @@
     color: var(--ink-2);
 }
 
-.lexicon-panel,
-.provenance-panel {
-    /* 这两块是 .translation-area 这个 1fr/90px/1fr 栅格的子项，
-       不横跨整行的话，溯源面板会被挤进中间那条 90px 的窄列里。 */
-    grid-column: 1 / -1;
-    margin-top: var(--space-4);
-    padding: var(--space-4);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-md);
-    background: var(--surface);
-}
-
-.panel-title {
-    font-weight: 500;
-    color: var(--ink-1);
-    margin-bottom: var(--space-2);
-    font-size: var(--text-base);
-}
-
-.panel-note {
-    margin-top: var(--space-2);
-    font-size: var(--text-xs);
-    color: var(--ink-2);
-}
-
-.lexicon-list,
-.provenance-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-}
-
-.lexicon-list li {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: var(--space-3);
-    font-size: var(--text-sm);
-    padding-bottom: var(--space-2);
-    border-bottom: 1px dotted var(--line);
-}
-
-.lexicon-term {
-    color: var(--ink-0);
-}
-
-.lexicon-meta {
-    color: var(--ink-2);
-    font-size: var(--text-xs);
-    white-space: nowrap;
-}
-
-.provenance-list li {
-    padding-bottom: var(--space-2);
-    border-bottom: 1px dotted var(--line);
-}
-
-.prov-title {
-    font-weight: 500;
-    color: var(--ink-0);
-    font-size: var(--text-sm);
-}
-
-.prov-seg {
-    font-weight: 400;
-    color: var(--ink-2);
-    font-size: var(--text-xs);
-}
-
-.prov-text {
-    color: var(--ink-1);
-    font-size: var(--text-sm);
-    font-family: var(--font-serif);
-    line-height: var(--leading-canon);
-    margin: var(--space-1) 0;
-}
-
-/* 溯源链接：金色调文字用 --gold-text，不用 --gold（对 --surface 只有 3.1:1） */
-.prov-link a {
-    color: var(--gold-text);
-    font-size: var(--text-xs);
-    text-decoration: none;
-}
-
-.prov-link a:hover {
-    text-decoration: underline;
-}
 
 /* ============================= 朗读进度高亮 ============================= */
 
