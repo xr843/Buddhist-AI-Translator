@@ -266,3 +266,51 @@ test('CONTRIBUTING points terminology updates at src/terms.json', async () => {
     assert.match(source, /"无常"\s*:\s*"impermanence \/ अनित्य"/);
     assert.doesNotMatch(source, /script\.js\s+的\s+BUDDHIST_TERMS|BUDDHIST_TERMS\s+对象/);
 });
+
+test('index.html allows the app to reach the Worker proxy and Dharmamitra', async () => {
+    const source = await readSource('index.html');
+    const directives = cspDirectives(contentSecurityPolicy(source));
+    const connectSrc = directives.get('connect-src') || [];
+
+    // 默认 Worker 域名，MITRA 与藏经溯源都经它中转
+    assert.ok(connectSrc.includes('https://*.workers.dev'), 'connect-src should allow the default Worker origin');
+    // 留着上游修好重复 CORS 头之后可以改回直连
+    assert.ok(connectSrc.includes('https://dharmamitra.org'), 'connect-src should allow Dharmamitra');
+    // 生产 CSP 不该带本地开发地址
+    assert.ok(
+        !connectSrc.some(source => /127\.0\.0\.1|localhost/.test(source)),
+        'the shipped CSP must not carry a localhost development origin'
+    );
+});
+
+test('worker README explains why the MITRA proxy exists and how to reach it', async () => {
+    const source = await readSource('worker/README.md');
+
+    assert.match(source, /\/mitra\/translate/);
+    assert.match(source, /\/mitra\/search/);
+    // 重复的 CORS 头是这个中转存在的唯一理由，别让它从文档里消失
+    assert.match(source, /Access-Control-Allow-Origin/);
+    assert.match(source, /multiple values/);
+    assert.match(source, /wrangler dev/);
+});
+
+test('README tells operators that MITRA needs the Worker deployed first', async () => {
+    const source = await readSource('README.md');
+
+    assert.match(source, /worker\/README\.md/);
+    assert.match(source, /Access-Control-Allow-Origin/);
+    assert.match(source, /dharmamitra-project@gmail\.com/);
+    assert.match(source, /CC BY 4\.0/);
+});
+
+test('lexicon docs record the sampling method behind the quoted precision', async () => {
+    const source = await readSource('docs/lexicon.md');
+
+    assert.match(source, /CC BY 4\.0/);
+    assert.match(source, /dharmamitra-lexicon/);
+    // 精确率必须写清楚是怎么量的，否则就是一个没法复核的数字
+    assert.match(source, /87\.5%/);
+    assert.match(source, /人工/);
+    assert.match(source, /种子/);
+    assert.match(source, /build-lexicon\.mjs/);
+});
