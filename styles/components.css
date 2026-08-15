@@ -1,0 +1,822 @@
+/*
+ * 组件样式 —— 素雅经卷
+ *
+ * 各功能块 + 全部响应式断点。颜色一律引用 styles/tokens.css 里的 var(--*)，
+ * 不新增 token、不写裸 hex、不写裸 rgba() 当颜色（tests/design-tokens.test.mjs 扫这条）。
+ * 选择器归属见 docs/superpowers/specs/2026-08-15-ui-redesign-design.md 第 7 节。
+ */
+
+/* ============================= 顶栏：app bar ============================= */
+
+.app-bar {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+    flex-shrink: 0;
+}
+
+.app-bar-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--space-3) var(--space-4);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.brand {
+    font-family: var(--font-serif);
+    font-size: var(--text-lg);
+    font-weight: 500;
+    color: var(--ink-0);
+}
+
+.brand-sub {
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    font-weight: 400;
+    color: var(--ink-2);
+    margin-left: var(--space-2);
+}
+
+.app-bar-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
+/* --- 引擎与 API 配置状态 ---
+   原来的 .api-status-bar 包装层已随重构解散，子元素直接挂在 .app-bar-actions 下，
+   所以这里不再有它的规则。 */
+.api-status-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--ink-2);
+}
+
+.status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: var(--radius-full);
+    background: var(--danger);
+    animation: pulse 2s infinite ease-in-out;
+}
+
+.status-indicator.connected {
+    background: var(--ok);
+    animation: none;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: .5; }
+    100% { opacity: 1; }
+}
+
+.api-config-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    background: var(--accent);
+    color: var(--on-accent);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: var(--shadow-1);
+    font-family: var(--font-sans);
+}
+
+.api-config-btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-2);
+}
+
+/*
+ * 已连接是**状态**，不是主操作。填实心绿会让它成为整页最响的元素，
+ * 把主按钮「翻译」压下去——层级就反了。所以这一态退成浅底描边。
+ */
+.api-config-btn.configured {
+    background: var(--ok-soft);
+    color: var(--ok);
+    border: 1px solid var(--ok);
+    box-shadow: none;
+}
+
+.api-config-btn.configured:hover {
+    background: var(--ok-soft);
+    color: var(--ok);
+    filter: brightness(.97);
+}
+
+.engine-label {
+    font-weight: 500;
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+}
+
+.engine-select {
+    padding: var(--space-1) var(--space-2);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--ink-0);
+    font-size: var(--text-sm);
+    font-family: var(--font-sans);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.engine-select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+/* ============================= hero：无金色横幅 ============================= */
+
+.hero {
+    padding: var(--space-4) 0;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.hero-title {
+    font-family: var(--font-serif);
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    color: var(--ink-0);
+    margin-bottom: var(--space-2);
+}
+
+.hero-subtitle {
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    color: var(--ink-2);
+    max-width: 800px;
+    margin: 0 auto;
+    line-height: var(--leading-normal);
+}
+
+/* ============================= 翻译器主体 ============================= */
+
+.translator {
+    padding: var(--space-2) 0 0;
+    padding-bottom: 72px;
+    flex: 1;
+    overflow: auto;
+}
+
+.translator-card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-2);
+    padding: var(--space-3) var(--space-1);
+    margin-bottom: 0;
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+    min-height: min(560px, calc(100vh - 260px));
+}
+
+/* --- 源 ⇄ 目标语言 --- */
+.language-selectors {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: var(--space-4);
+    margin-bottom: var(--space-3);
+    align-items: end;
+}
+
+.language-selector {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.language-selector label {
+    font-weight: 500;
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+}
+
+.lang-select {
+    padding: var(--space-3) var(--space-4);
+    border: 2px solid var(--line-strong);
+    border-radius: var(--radius-md);
+    font-size: var(--text-base);
+    font-family: var(--font-sans);
+    background: var(--surface);
+    color: var(--ink-0);
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.lang-select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.swap-languages {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.swap-btn {
+    background: var(--accent);
+    color: var(--on-accent);
+    border: none;
+    border-radius: var(--radius-full);
+    width: 48px;
+    height: 48px;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.swap-btn:hover {
+    background: var(--accent-hover);
+    transform: rotate(180deg);
+}
+
+/* ============================= 设置区：译风 + 多本合参并排 ============================= */
+
+.settings-row {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+}
+
+.settings-row > .style-panel,
+.settings-row > .witness-bar {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+/* --- 译风设置 --- */
+.style-panel {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    overflow: hidden;
+}
+
+.style-summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    cursor: pointer;
+    list-style: none;
+    font-size: var(--text-sm);
+}
+
+.style-summary-row::-webkit-details-marker {
+    display: none;
+}
+
+.style-title {
+    font-weight: 500;
+    color: var(--ink-1);
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.style-summary {
+    color: var(--ink-2);
+    font-size: var(--text-xs);
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.style-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: var(--space-3);
+    padding: 0 var(--space-3) var(--space-3);
+    /* 打开面板与选项网格之间的分隔——金色点缀，仅此一处细边 */
+    border-top: 1px solid var(--gold);
+    padding-top: var(--space-3);
+}
+
+.style-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.style-field label {
+    font-size: var(--text-xs);
+    color: var(--ink-2);
+    font-weight: 500;
+}
+
+.style-field .lang-select {
+    padding: var(--space-2);
+    font-size: var(--text-sm);
+}
+
+/* --- 多本合参 --- */
+.witness-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    font-size: var(--text-sm);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+}
+
+.witness-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--ink-1);
+}
+
+.witness-hint {
+    color: var(--ink-2);
+    font-size: var(--text-xs);
+}
+
+.witness-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--space-3);
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+    border: 1px dashed var(--line-strong);
+    border-radius: var(--radius-md);
+    background: var(--surface-2);
+}
+
+.witness-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.witness-field label,
+.witness-focus label {
+    font-size: var(--text-xs);
+    font-weight: 500;
+    color: var(--ink-2);
+}
+
+.witness-input {
+    padding: var(--space-2);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--ink-0);
+    font-family: inherit;
+    font-size: var(--text-base);
+    resize: vertical;
+}
+
+.witness-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.witness-focus {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    justify-content: flex-end;
+}
+
+.witness-focus .lang-select {
+    padding: var(--space-2);
+    font-size: var(--text-sm);
+}
+
+/* ============================= 输入 / 输出 ============================= */
+
+.translation-area {
+    display: grid;
+    grid-template-columns: 1fr 90px 1fr;
+    gap: var(--space-4);
+    align-items: start;
+}
+
+.input-section,
+.output-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.text-area-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-1) 0;
+}
+
+.language-label {
+    font-weight: 500;
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+}
+
+/* 佛典正文用衬线体 + 经文行高 */
+.text-input {
+    border: 2px solid var(--line-strong);
+    border-radius: var(--radius-md);
+    padding: var(--space-3);
+    font-size: var(--text-base);
+    font-family: var(--font-serif);
+    line-height: var(--leading-canon);
+    color: var(--ink-0);
+    background: var(--surface);
+    resize: vertical;
+    height: clamp(220px, 38vh, 460px);
+    overflow-y: auto;
+    transition: var(--transition);
+}
+
+.text-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.input-tools {
+    display: flex;
+    align-items: center;
+    padding: var(--space-1) 0;
+    gap: var(--space-2);
+}
+
+.input-tools .char-count {
+    margin-left: auto;
+}
+
+.input-tools .tool-btn {
+    padding: var(--space-2) var(--space-3);
+}
+
+.char-count {
+    font-size: var(--text-xs);
+    color: var(--ink-2);
+}
+
+.translate-button-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.translate-btn {
+    background: var(--accent);
+    color: var(--on-accent);
+    border: none;
+    border-radius: var(--radius-md);
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--text-base);
+    font-weight: 600;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    box-shadow: var(--shadow-1);
+    white-space: nowrap;
+    width: 90px;
+    min-width: 90px;
+    max-width: 90px;
+}
+
+.translate-btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-2);
+}
+
+.translate-btn:active {
+    transform: translateY(0);
+}
+
+.translate-btn:disabled {
+    background: var(--ink-2);
+    cursor: not-allowed;
+    transform: none;
+}
+
+.output-tools {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.text-output {
+    border: 2px solid var(--line-strong);
+    border-radius: var(--radius-md);
+    padding: var(--space-3);
+    background: var(--surface);
+    color: var(--ink-0);
+    font-size: var(--text-base);
+    font-family: var(--font-serif);
+    line-height: var(--leading-canon);
+    overflow-y: auto;
+    height: clamp(220px, 38vh, 460px);
+}
+
+.translation-text {
+    white-space: pre-wrap;
+}
+
+.text-output .placeholder {
+    color: var(--ink-2);
+    font-style: italic;
+    font-family: var(--font-sans);
+}
+
+.error {
+    color: var(--danger);
+    font-family: var(--font-sans);
+}
+
+/* ============================= 结果元信息 / 实证术语 / 藏经溯源 ============================= */
+
+.result-meta {
+    margin-top: var(--space-2);
+    font-size: var(--text-xs);
+    color: var(--ink-2);
+}
+
+.lexicon-panel,
+.provenance-panel {
+    /* 这两块是 .translation-area 这个 1fr/90px/1fr 栅格的子项，
+       不横跨整行的话，溯源面板会被挤进中间那条 90px 的窄列里。 */
+    grid-column: 1 / -1;
+    margin-top: var(--space-4);
+    padding: var(--space-4);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+}
+
+.panel-title {
+    font-weight: 500;
+    color: var(--ink-1);
+    margin-bottom: var(--space-2);
+    font-size: var(--text-base);
+}
+
+.panel-note {
+    margin-top: var(--space-2);
+    font-size: var(--text-xs);
+    color: var(--ink-2);
+}
+
+.lexicon-list,
+.provenance-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.lexicon-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-3);
+    font-size: var(--text-sm);
+    padding-bottom: var(--space-2);
+    border-bottom: 1px dotted var(--line);
+}
+
+.lexicon-term {
+    color: var(--ink-0);
+}
+
+.lexicon-meta {
+    color: var(--ink-2);
+    font-size: var(--text-xs);
+    white-space: nowrap;
+}
+
+.provenance-list li {
+    padding-bottom: var(--space-2);
+    border-bottom: 1px dotted var(--line);
+}
+
+.prov-title {
+    font-weight: 500;
+    color: var(--ink-0);
+    font-size: var(--text-sm);
+}
+
+.prov-seg {
+    font-weight: 400;
+    color: var(--ink-2);
+    font-size: var(--text-xs);
+}
+
+.prov-text {
+    color: var(--ink-1);
+    font-size: var(--text-sm);
+    font-family: var(--font-serif);
+    line-height: var(--leading-canon);
+    margin: var(--space-1) 0;
+}
+
+/* 溯源链接：金色调文字用 --gold-text，不用 --gold（对 --surface 只有 3.1:1） */
+.prov-link a {
+    color: var(--gold-text);
+    font-size: var(--text-xs);
+    text-decoration: none;
+}
+
+.prov-link a:hover {
+    text-decoration: underline;
+}
+
+/* ============================= 朗读进度高亮 ============================= */
+
+.speech-highlight {
+    transition: background-color .2s ease, color .2s ease, opacity .2s ease;
+    display: inline;
+    position: relative;
+    line-height: var(--leading-canon);
+}
+
+.speech-highlight.current {
+    background-color: var(--accent);
+    color: var(--on-accent);
+    padding: 3px 6px;
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    box-shadow: var(--shadow-2);
+}
+
+.speech-highlight.completed {
+    background-color: var(--gold-soft);
+    color: var(--gold-text);
+    padding: 1px 2px;
+    border-radius: var(--radius-sm);
+    opacity: .8;
+}
+
+.speech-highlight.pending {
+    background-color: transparent;
+    color: inherit;
+    opacity: .6;
+}
+
+/* ============================= 页脚 ============================= */
+
+.footer-simple {
+    background: var(--footer-bg);
+    color: var(--footer-ink);
+    padding: var(--space-2) 0;
+    margin-top: 0;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.footer-simple p {
+    margin: 0;
+    color: var(--footer-ink);
+}
+
+.footer-credit {
+    margin-top: var(--space-1);
+    font-size: var(--text-xs);
+    color: var(--footer-ink);
+    line-height: var(--leading-normal);
+}
+
+.footer-credit a {
+    color: var(--footer-link);
+    text-decoration: none;
+}
+
+.footer-credit a:hover {
+    text-decoration: underline;
+}
+
+/* ============================= 响应式 ============================= */
+
+@media (max-width: 1200px) {
+    .translator-card {
+        padding: var(--space-4);
+        max-width: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero {
+        padding: var(--space-3) 0;
+    }
+
+    .hero-title {
+        font-size: var(--text-xl);
+    }
+
+    .hero-subtitle {
+        font-size: var(--text-sm);
+    }
+
+    .api-status-info {
+        justify-content: center;
+    }
+
+    .api-config-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .settings-row {
+        flex-direction: column;
+    }
+
+    .language-selectors {
+        grid-template-columns: 1fr;
+        gap: var(--space-2);
+        margin-bottom: var(--space-2);
+    }
+
+    .swap-languages {
+        order: 3;
+        margin-top: var(--space-2);
+    }
+
+    .translation-area {
+        grid-template-columns: 1fr;
+        gap: var(--space-4);
+    }
+
+    .translate-button-container {
+        order: 2;
+    }
+
+    .output-section {
+        order: 3;
+    }
+
+    .translator-card {
+        padding: var(--space-3);
+    }
+
+    .output-tools {
+        flex-wrap: wrap;
+        gap: var(--space-1);
+    }
+}
+
+@media (max-width: 640px) {
+    .style-summary {
+        display: none;
+    }
+
+    .witness-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero {
+        padding: var(--space-2) 0;
+    }
+
+    .translator {
+        padding: var(--space-1) 0 0;
+    }
+
+    .translator-card {
+        padding: var(--space-2);
+    }
+}

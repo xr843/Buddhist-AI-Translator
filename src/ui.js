@@ -277,7 +277,7 @@ async function handleTranslate() {
     hideProvenance();
 
     try {
-        translateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 翻译中...';
+        translateBtn.innerHTML = '<svg class="icon icon-spin" aria-hidden="true"><use href="#i-spinner"></use></svg> 翻译中...';
 
         try {
             const outcome = await translateText({
@@ -305,7 +305,7 @@ async function handleTranslate() {
         showMessage('翻译失败: ' + error.message, 'error');
     } finally {
         translateBtn.disabled = false;
-        translateBtn.innerHTML = '<i class="fas fa-language"></i> 翻译';
+        translateBtn.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-language"></use></svg> 翻译';
     }
 }
 
@@ -348,7 +348,7 @@ async function showLexiconPanel(text) {
     }).join('');
 
     lexiconPanel.innerHTML = `
-        <div class="panel-title"><i class="fas fa-language"></i> 本文术语的实证对照</div>
+        <div class="panel-title"><svg class="icon" aria-hidden="true"><use href="#i-language"></use></svg> 本文术语的实证对照</div>
         <ul class="lexicon-list">${rows}</ul>
         <p class="panel-note">对照数据来自平行语料实际出现的对译，未逐条人工审定；次数越高越可靠。</p>
     `;
@@ -375,7 +375,7 @@ async function handleProvenance() {
 
     if (!isMitraReachable()) {
         provenancePanel.hidden = false;
-        provenancePanel.innerHTML = '<div class="panel-title"><i class="fas fa-book-open"></i> 藏经溯源</div>'
+        provenancePanel.innerHTML = '<div class="panel-title"><svg class="icon" aria-hidden="true"><use href="#i-book"></use></svg> 藏经溯源</div>'
             + '<p class="panel-note">藏经检索需要先部署 Worker 中转（见 worker/README.md）。'
             + '浏览器暂时无法直连 Dharmamitra —— 对方在实际响应里重复发送了 CORS 头。</p>';
         return;
@@ -383,12 +383,12 @@ async function handleProvenance() {
 
     provenanceBtn.disabled = true;
     provenancePanel.hidden = false;
-    provenancePanel.innerHTML = '<div class="panel-title"><i class="fas fa-spinner fa-spin"></i> 正在藏经语料中检索…</div>';
+    provenancePanel.innerHTML = '<div class="panel-title"><svg class="icon icon-spin" aria-hidden="true"><use href="#i-spinner"></use></svg> 正在藏经语料中检索…</div>';
 
     try {
         const hits = await searchCanonical({ text, sourceLang: sourceSelect.value });
         if (hits.length === 0) {
-            provenancePanel.innerHTML = '<div class="panel-title"><i class="fas fa-book-open"></i> 藏经溯源</div>'
+            provenancePanel.innerHTML = '<div class="panel-title"><svg class="icon" aria-hidden="true"><use href="#i-book"></use></svg> 藏经溯源</div>'
                 + '<p class="panel-note">语料中没有检索到这段文字。可能是现代文、意引，或不在已收录的范围内。</p>';
             return;
         }
@@ -405,12 +405,12 @@ async function handleProvenance() {
         }).join('');
 
         provenancePanel.innerHTML = `
-            <div class="panel-title"><i class="fas fa-book-open"></i> 藏经溯源（${hits.length} 条）</div>
+            <div class="panel-title"><svg class="icon" aria-hidden="true"><use href="#i-book"></use></svg> 藏经溯源（${hits.length} 条）</div>
             <ul class="provenance-list">${rows}</ul>
             <p class="panel-note">检索与深链由 Dharmamitra 语料库提供。</p>
         `;
     } catch (error) {
-        provenancePanel.innerHTML = '<div class="panel-title"><i class="fas fa-book-open"></i> 藏经溯源</div>'
+        provenancePanel.innerHTML = '<div class="panel-title"><svg class="icon" aria-hidden="true"><use href="#i-book"></use></svg> 藏经溯源</div>'
             + `<p class="panel-note">${escapeHtml(describeTranslationError(error))}</p>`;
     } finally {
         provenanceBtn.disabled = false;
@@ -556,10 +556,10 @@ function updateSpeakerButton(speaking) {
     if (!speakerBtn) return;
 
     if (speaking) {
-        speakerBtn.innerHTML = '<i class="fas fa-stop"></i>';
+        speakerBtn.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-stop"></use></svg>';
         speakerBtn.title = '停止朗读';
     } else {
-        speakerBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+        speakerBtn.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-volume"></use></svg>';
         speakerBtn.title = '朗读';
     }
 }
@@ -632,12 +632,12 @@ function checkApiKeyStatus() {
     if (useProxy || API_CONFIG.apiKey) {
         apiConfigBtn.classList.add('configured');
         apiConfigBtn.innerHTML = useProxy
-            ? '<i class="fas fa-shield-alt"></i><span>代理已连接</span>'
-            : '<i class="fas fa-check-circle"></i><span>API已配置</span>';
+            ? '<svg class="icon" aria-hidden="true"><use href="#i-shield"></use></svg><span>代理已连接</span>'
+            : '<svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg><span>API已配置</span>';
         apiConfigBtn.title = useProxy ? '通过安全代理连接' : 'API已配置，点击修改';
     } else {
         apiConfigBtn.classList.remove('configured');
-        apiConfigBtn.innerHTML = '<i class="fas fa-key"></i><span>配置API</span>';
+        apiConfigBtn.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-key"></use></svg><span>配置API</span>';
         apiConfigBtn.title = '可选：配置 DeepSeek 密钥以支持 MITRA 不受理的语种对';
     }
 

@@ -1,0 +1,135 @@
+/*
+ * 设计 token —— 素雅经卷
+ *
+ * 这是**唯一**允许出现裸 hex 的样式文件。base.css 与 components.css 里的任何
+ * 颜色都必须写成 var(--*)，tests/design-tokens.test.mjs 扫着这条。
+ * 拆出这个文件的全部理由就是让那道门禁能被表达出来。
+ *
+ * 配色原则：
+ *   - 金色（--gold）只用于图标、细边、分隔。它对 --surface 的对比度只有 3.1:1，
+ *     当正文色就是不可读的。需要金色调的文字用 --gold-text。
+ *   - 强调色是朱砂（--accent），不是金色。主按钮、焦点环走它。
+ *   - 深色块里重定义的是**同名** token，键集合与浅色必须完全一致（有门禁比对）。
+ */
+
+:root {
+    /* --- 底与面 --- */
+    --bg: #F5F1E8;
+    --surface: #FBF9F4;
+    --surface-2: #EFEADE;
+
+    /* --- 文字 --- */
+    --ink-0: #1F1B16;
+    --ink-1: #4A4239;
+    --ink-2: #6B6259;
+
+    /* --- 线 --- */
+    --line: #E3DCCC;
+    --line-strong: #CFC5AF;
+
+    /* --- 金：点缀，不做底色，不做正文色 --- */
+    --gold: #B8860B;
+    --gold-soft: #EFE3C2;
+    --gold-text: #7A5A06;
+
+    /* --- 朱砂：强调 --- */
+    --accent: #A63A2E;
+    --accent-hover: #8E2F25;
+    --accent-soft: #F6E9E6;
+    --on-accent: #FFFFFF;
+
+    /* --- 语义状态 --- */
+    --ok: #2F6B4F;
+    --ok-soft: #E4EFE8;
+    --warn: #8A6D12;
+    --danger: #A63A2E;
+
+    /* 模态框遮罩。单独给一个 token，是因为它在浅色和深色下都得是「暗」的，
+       不能跟着 --surface 之类翻转；借用 --footer-bg 语义上是错位的。 */
+    --scrim: rgba(31, 27, 22, .55);
+
+    /* --- 页脚 --- */
+    --footer-bg: #1F1B16;
+    --footer-ink: #D8D0C0;
+    --footer-link: #E0C77A;
+
+    /* --- 阴影：暖调，跟随主题 --- */
+    --shadow-1: 0 1px 2px rgba(31, 27, 22, .06), 0 1px 3px rgba(31, 27, 22, .04);
+    --shadow-2: 0 4px 16px rgba(31, 27, 22, .10), 0 1px 4px rgba(31, 27, 22, .06);
+
+    /* --- 间距 --- */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+
+    /* --- 圆角 --- */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-full: 999px;
+
+    /* --- 字体 --- */
+    --font-sans: 'Noto Sans SC', system-ui, -apple-system, 'PingFang SC', sans-serif;
+    --font-serif: 'Noto Serif SC', 'Songti SC', 'Source Han Serif SC', serif;
+
+    /* --- 字号 --- */
+    --text-xs: .75rem;
+    --text-sm: .85rem;
+    --text-base: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.5rem;
+    --text-2xl: 1.875rem;
+
+    /* --- 行高：佛典正文用 --leading-canon --- */
+    --leading-tight: 1.35;
+    --leading-normal: 1.6;
+    --leading-canon: 1.9;
+
+    /* --- 动效 --- */
+    --transition: 180ms cubic-bezier(.2, .7, .3, 1);
+}
+
+/*
+ * 夜读。跟随系统，无切换按钮。
+ * 只重定义随主题变的 token；间距/圆角/字体/字号/行高/动效不在这里出现。
+ */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #14120F;
+        --surface: #1C1915;
+        --surface-2: #26221C;
+
+        --ink-0: #EDE7DA;
+        --ink-1: #C9C0AE;
+        --ink-2: #9A9184;
+
+        --line: #332E26;
+        --line-strong: #47402F;
+
+        --gold: #D9AE4A;
+        --gold-soft: #33291A;
+        --gold-text: #E0C77A;
+
+        --accent: #D9705F;
+        --accent-hover: #E6897A;
+        --accent-soft: #33201C;
+        --on-accent: #14120F;
+
+        --ok: #6FBF95;
+        --ok-soft: #1B2B22;
+        --warn: #D9AE4A;
+        --danger: #E88B7C;
+
+        --scrim: rgba(0, 0, 0, .68);
+
+        --footer-bg: #0F0D0B;
+        --footer-ink: #C9C0AE;
+        --footer-link: #E0C77A;
+
+        --shadow-1: 0 1px 2px rgba(0, 0, 0, .40), 0 1px 3px rgba(0, 0, 0, .30);
+        --shadow-2: 0 4px 16px rgba(0, 0, 0, .55), 0 1px 4px rgba(0, 0, 0, .40);
+    }
+}
