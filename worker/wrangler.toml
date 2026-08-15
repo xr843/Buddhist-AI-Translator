@@ -8,14 +8,16 @@ compatibility_date = "2024-01-01"
 # [vars]
 # ALLOWED_ORIGINS = "https://xr843.github.io http://127.0.0.1:8000"
 
-# 速率限制 KV 命名空间（可选）
-# 执行以下命令创建 KV 并绑定：
-#   wrangler kv namespace create RATE_LIMIT_KV
-# 然后将返回的 id 填入下方：
+# 速率限制 KV 命名空间。
+# ⚠️ 不绑这个，worker.js 的 enforceRateLimit 会直接放行（见其中的 `if (!env.RATE_LIMIT_KV)`），
+# 等于没有限流。来源白名单只挡得住浏览器——curl 伪造 Origin 就能绕过，
+# 所以公开部署时这一条是必需的，不是可选的。
 #
-# [[kv_namespaces]]
-# binding = "RATE_LIMIT_KV"
-# id = "<your-kv-namespace-id>"
+# 自部署的人执行下面这条创建自己的命名空间，把返回的 id 换进去：
+#   wrangler kv namespace create RATE_LIMIT_KV
+[[kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "901a9edc0b4b4a1fa87508fc0de55038"
 
 # API 密钥通过 Cloudflare Secret 设置（不要写在这里）：
 #   wrangler secret put DEEPSEEK_API_KEY
