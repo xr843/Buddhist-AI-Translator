@@ -239,21 +239,27 @@ Buddhist-AI-Translator/
 
 ## 数据来源与鸣谢 | Attribution
 
+完整声明见 **[NOTICE.md](NOTICE.md)**（含每条许可声明的可复核出处、改编详情、以及义务与请求的区分）。
+
 本项目的佛典翻译能力、语料检索与术语对照数据来自
 **[Dharmamitra](https://dharmamitra.org) / MITRA 项目（东北大学，Sebastian Nehrdich 等）**：
 
-| 用途 | 来源 | 许可 |
-|---|---|---|
-| 佛典翻译（默认引擎） | MITRA `cat-translate` 公开接口 | 对方免费公开，无需鉴权 |
-| 藏经语料检索与深链 | MITRA `primary` 公开接口 | 同上 |
-| 汉语术语 → 梵／藏对照 | [dharmamitra-lexicon](https://github.com/dharmamitra/dharmamitra-lexicon) | **CC BY 4.0** |
+| 用途 | 来源 | 许可 | 声明出处 |
+|---|---|---|---|
+| 佛典翻译（默认引擎） | MITRA `cat-translate` 公开接口 | ⚠️ 未找到使用条款（八个常见路径均 404，非对方确认不存在）；官方文档自述 “free-for-access” | [MITRA Translate 文档](https://dharmamitra.github.io/dharmamitra-guides/mitra_tools/translate/) |
+| 藏经语料检索与深链 | MITRA `primary` 公开接口 | 同上 | 同上 |
+| 汉语术语 → 梵／藏对照 | [dharmamitra-lexicon](https://github.com/dharmamitra/dharmamitra-lexicon) | **[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)**，**本项目已改编** | 上游 README `## License` 一节（⚠️ 该仓库无 LICENSE 文件） |
+
+术语对照数据是**派生品而非原样转发**：只取两个方向、按词聚合、两道过滤、每词只留前几个原语，
+8,610 条约为上游 684,365 组对照的一小部分。改动清单见 [NOTICE.md](NOTICE.md) 与 [docs/lexicon.md](docs/lexicon.md)。
 
 产品形态上的**译风多维控制**（文本类别 + 若干风格维度组合成给模型的指令），
 参考了 [foguang.ai](https://foguang.ai)（佛光山人间佛教研究院 × MITRA）公开说明的做法。
 
-> **公开部署前请先致信 `dharmamitra-project@gmail.com` 告知。**
-> 这是 dharmamitra-lexicon 上游 README 对下游公开应用的明确请求；
-> 对免费公开接口的用量而言，这也是应有的礼节。
+> **公开部署前致信 `dharmamitra-project@gmail.com` 告知。**
+> 说明：这是上游 README 在许可条款**之外**提出的**请求**，不是 CC BY 4.0 的许可条件——
+> 署名义务已由页脚与本节履行。本项目选择照办是出于礼节。两者不要混为一谈，
+> 详见 [NOTICE.md](NOTICE.md) 第三节。
 
 ## Browser Compatibility
 

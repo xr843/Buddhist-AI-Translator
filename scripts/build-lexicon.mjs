@@ -218,7 +218,13 @@ async function main() {
             upstream: 'https://github.com/dharmamitra/dharmamitra-lexicon',
             upstreamCommit: '2b327f3453fb1d273ed00f367aac1c83a5c962b1',
             license: 'CC BY 4.0',
+            licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+            // 上游仓库没有 LICENSE 文件，许可依据只是 README 的一句话 —— 出处要能复核
+            licenseSource: 'upstream README, section "## License"',
             attribution: 'Dharmamitra project (MITRA, Tohoku University)',
+            // CC BY 4.0 §3(a)(1)(B) 要求指明是否修改。本索引改编幅度很大，见 NOTICE.md
+            modified: true,
+            modifications: 'filtered, aggregated per term, truncated to top lemmas; see NOTICE.md',
             note: '每个词条由平行语料中真实出现的对译片段聚合而成，未经人工逐条审定；n 为出现次数，src 为大正藏经号。',
             // 2026-08-14 抽样核验：固定种子随机取 40 条逐条人工判读，
             // 5 条是句法碎片而非词项（麁等 / 住中 / 名菩薩 / 心平等 / 象等），精确率 87.5%。
