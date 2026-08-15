@@ -97,10 +97,6 @@
             <line x1="9" y1="12" x2="15" y2="12"/>
             <line x1="9" y1="16" x2="15" y2="16"/>
         </symbol>
-        <symbol id="i-book" viewBox="0 0 24 24">
-            <path d="M12 5c-1.5-1.5-4-2-8-2v14c4 0 6.5.5 8 2 1.5-1.5 4-2 8-2V3c-4 0-6.5.5-8 2z"/>
-            <line x1="12" y1="5" x2="12" y2="19"/>
-        </symbol>
         <symbol id="i-copy" viewBox="0 0 24 24">
             <path d="M8 8h11a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/>
             <path d="M5 16V5a1 1 0 0 1 1-1h11"/>
@@ -300,9 +296,6 @@
                             <div class="text-area-header">
                                 <span class="language-label" id="target-label">现代中文</span>
                                 <div class="output-tools">
-                                    <button class="tool-btn" id="provenance-btn" title="在藏经语料中溯源">
-                                        <svg class="icon" aria-hidden="true"><use href="#i-book"></use></svg>
-                                    </button>
                                     <button class="tool-btn" id="copy-btn" title="复制">
                                         <svg class="icon" aria-hidden="true"><use href="#i-copy"></use></svg>
                                     </button>
@@ -319,12 +312,6 @@
                             </div>
                             <div class="result-meta" id="result-meta" hidden></div>
                         </div>
-
-                        <!-- 本文命中的实证术语对照 -->
-                        <div class="lexicon-panel" id="lexicon-panel" hidden></div>
-
-                        <!-- 藏经溯源结果 -->
-                        <div class="provenance-panel" id="provenance-panel" hidden></div>
                     </div>
                 </div>
             </div>

@@ -110,24 +110,8 @@ async function stubMitra(page, { failTranslate = false } = {}) {
       return;
     }
 
-    if (url.includes('/mitra/search')) {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          results: [{
-            segmentnr: 'ZH_T08_0251_001:0848c07',
-            lang: 'zh',
-            source: 'ZH_T08_0251',
-            title: '般若波羅蜜多心經',
-            text: '觀自在菩薩行深般若波羅蜜多時',
-            src_link: 'https://dharmamitra.org/nexus/db/zh/ZH_T08_0251/text'
-          }]
-        })
-      });
-      return;
-    }
-
+    // 前端不再调用 /mitra/search（溯源面板已移除），所以这里也不再给它打桩。
+    // Worker 那条路由仍在，src/mitra.js 的客户端也还在，只是界面上没有入口了。
     await route.fulfill({ status: 404, body: 'not stubbed' });
   });
 }
@@ -169,26 +153,13 @@ async function runSmokeCheck() {
       throw new Error(`Expected the result meta line to name the MITRA engine, received: ${metaText}`);
     }
 
-    // 2. 藏经溯源
-    await page.locator('#provenance-btn').click();
-    await page.locator('#provenance-panel .provenance-list li').first().waitFor({ state: 'visible' });
-    const provenanceText = (await page.locator('#provenance-panel').textContent() || '').trim();
-    for (const expected of ['般若波羅蜜多心經', 'ZH_T08_0251_001:0848c07']) {
-      if (!provenanceText.includes(expected)) {
-        throw new Error(`Provenance panel is missing expected text: ${expected}`);
+    // 2. 界面只留翻译：术语对照与藏经溯源两个结果面板已移除。
+    //    术语库本身仍在背后参与翻译（作为 context 传给 MITRA），只是不再渲染成面板，
+    //    所以这里断言的是「面板确实不存在」，而不是「术语功能没了」。
+    for (const gone of ['#lexicon-panel', '#provenance-panel', '#provenance-btn']) {
+      if (await page.locator(gone).count() !== 0) {
+        throw new Error(`${gone} should have been removed from the page`);
       }
-    }
-    const provenanceLink = await page.locator('#provenance-panel .prov-link a').first().getAttribute('href');
-    if (provenanceLink !== 'https://dharmamitra.org/nexus/db/zh/ZH_T08_0251/text') {
-      throw new Error(`Provenance deep link should be used verbatim, received: ${provenanceLink}`);
-    }
-
-    // 两个结果面板是 .translation-area 这个三列栅格的子项，不横跨整行就会被挤进
-    // 中间那条 90px 的窄列。量实际渲染宽度，光看 CSS 里有没有那行声明不算数。
-    const areaWidth = (await page.locator('.translation-area').boundingBox())?.width ?? 0;
-    const panelWidth = (await page.locator('#provenance-panel').boundingBox())?.width ?? 0;
-    if (panelWidth < areaWidth * 0.9) {
-      throw new Error(`Provenance panel is squeezed: ${panelWidth}px inside a ${areaWidth}px area`);
     }
 
     await page.locator('#copy-btn').click();
