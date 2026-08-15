@@ -48,3 +48,6 @@ api-config.js
 # wrangler dev 的本地缓存
 .wrangler/
 worker/.wrangler/
+
+# 验收跑批的产物（可由 eval/run-document.mjs 重新生成）
+eval/out/

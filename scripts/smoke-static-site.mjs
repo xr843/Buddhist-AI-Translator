@@ -93,7 +93,7 @@ const PROXY_ORIGIN = 'https://smoke-translator.workers.dev';
  * MITRA 是默认引擎，所以冒烟测试必须把中转拦下来。
  * 否则这个测试会依赖外网、依赖对方服务可用，还会在 CI 里给人家白白发请求。
  */
-async function stubMitra(page, { failTranslate = false } = {}) {
+async function stubMitra(page, { failTranslate = false, translations = null, calls = null } = {}) {
   await page.route(`${PROXY_ORIGIN}/**`, async route => {
     const url = route.request().url();
 
@@ -102,10 +102,17 @@ async function stubMitra(page, { failTranslate = false } = {}) {
         await route.fulfill({ status: 503, contentType: 'application/json', body: '{"error":"down"}' });
         return;
       }
+      if (calls) {
+        calls.push(JSON.parse(route.request().postData() || '{}'));
+      }
+      // 整部经场景要每块回不同的译文，才验得出上文有没有被回喂
+      const body = translations
+        ? { translation: `${translations.prefix}${calls ? calls.length - 1 : 0}` }
+        : { translation: MITRA_TRANSLATION };
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ translation: MITRA_TRANSLATION })
+        body: JSON.stringify(body)
       });
       return;
     }
@@ -243,7 +250,70 @@ async function runSmokeCheck() {
       throw new Error('Clear input did not reset source text, character count, and result placeholder');
     }
 
-    // 5. MITRA 挂掉时要退回内置术语模式，而不是白屏
+    // 5. 整部经模式：切块、逐块译、并把已译上文回喂给下一块
+    await page.unroute(`${PROXY_ORIGIN}/**`);
+    const docCalls = [];
+    await stubMitra(page, { translations: { prefix: 'CHUNK-TRANSLATION-' }, calls: docCalls });
+
+    await page.locator('#document-mode-toggle').check();
+    if (await page.locator('#witness-grid').isVisible()) {
+      throw new Error('Turning on document mode must switch multi-witness off');
+    }
+
+    const sutra = [
+      '如是我聞。一時佛在舍衛國祇樹給孤獨園。與大比丘僧千二百五十人俱。',
+      '',
+      '舍利弗，彼土何故名為極樂？其國眾生，無有眾苦，但受諸樂，故名極樂。',
+      '',
+      '又舍利弗，極樂國土，七重欄楯，七重羅網，七重行樹，皆是四寶周匝圍繞。'
+    ].join('\n');
+    await page.locator('#source-lang').selectOption('zh-classical');
+    await page.locator('#source-text').fill(sutra);
+    await page.locator('#translate-btn').click();
+
+    await page.locator('#doc-chunks .doc-chunk').nth(2).waitFor({ state: 'visible', timeout: 60000 });
+    const renderedChunks = await page.locator('#doc-chunks .doc-chunk').count();
+    if (renderedChunks !== 3) {
+      throw new Error(`Expected the document to split into 3 chunks, got ${renderedChunks}`);
+    }
+
+    const progressText = (await page.locator('#doc-progress-text').textContent() || '').trim();
+    if (progressText !== '3 / 3 块') {
+      throw new Error(`Unexpected progress readout: ${progressText}`);
+    }
+
+    // 这是整部经模式的命门：第 N 块的 context 里必须带着第 N-1 块的译文。
+    // 少了它就退化成逐段各译各的，术语照样漂。
+    if (docCalls.length !== 3) {
+      throw new Error(`Expected 3 upstream calls, got ${docCalls.length}`);
+    }
+    if ((docCalls[0].context || '').includes('CHUNK-TRANSLATION-')) {
+      throw new Error('The first chunk cannot have a preceding translation');
+    }
+    for (let i = 1; i < docCalls.length; i += 1) {
+      if (!(docCalls[i].context || '').includes(`CHUNK-TRANSLATION-${i - 1}`)) {
+        throw new Error(`Chunk ${i} was not given chunk ${i - 1}'s translation as context`);
+      }
+    }
+    // 每块送上去的原文必须是一句一行 —— 官方文档说后端偏好这个排版
+    if (!docCalls[0].input_chinese.includes('\n')) {
+      throw new Error('Chunk source must be laid out one sentence per line');
+    }
+
+    const docExport = page.waitForEvent('download');
+    await page.locator('#doc-export').click();
+    const docFile = await docExport;
+    const docText = await readFile(await docFile.path(), 'utf8');
+    for (const expected of ['如是我聞。', 'CHUNK-TRANSLATION-0', 'CHUNK-TRANSLATION-2']) {
+      if (!docText.includes(expected)) {
+        throw new Error(`Exported document is missing: ${expected}`);
+      }
+    }
+
+    await page.locator('#document-mode-toggle').uncheck();
+    await page.locator('#clear-input').click();
+
+    // 6. MITRA 挂掉时要退回内置术语模式，而不是白屏
     await page.unroute(`${PROXY_ORIGIN}/**`);
     await stubMitra(page, { failTranslate: true });
     await page.locator('#source-text').fill('观自在菩萨');
