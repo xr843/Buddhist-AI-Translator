@@ -67,7 +67,20 @@ test('index.html references existing local assets and modules', async () => {
     const html = await readFile(indexPath, 'utf8');
     const references = collectLocalAssetReferences(html);
 
-    assert.ok(references.includes('styles.css'), 'expected index.html to reference styles.css');
+    // 三层样式表的引用顺序就是层叠顺序：token 先于基元，基元先于组件。
+    const stylesheets = ['styles/tokens.css', 'styles/base.css', 'styles/components.css'];
+
+    for (const stylesheet of stylesheets) {
+        assert.ok(references.includes(stylesheet), `expected index.html to reference ${stylesheet}`);
+    }
+
+    const linkOrder = stylesheets.map(stylesheet => html.indexOf(stylesheet));
+    assert.deepEqual(
+        linkOrder,
+        [...linkOrder].sort((a, b) => a - b),
+        'stylesheets must be linked in cascade order: tokens, base, components'
+    );
+
     assert.ok(references.includes('src/main.js'), 'expected index.html to reference src/main.js');
     assert.deepEqual(await findMissingLocalAssetReferences(html, repoRoot), []);
 });

@@ -1,0 +1,458 @@
+/*
+ * base.css —— reset / 排版 / 表单基元 / 按钮 / 图标 / 模态框 / 消息条
+ *
+ * 只引用 styles/tokens.css 里已经定义好的 var(--*)，不新增任何 token，
+ * 不出现裸 hex，不出现裸 rgba() 当颜色用（tests/design-tokens.test.mjs 扫这条）。
+ * 深色模式全靠 tokens.css 里重定义的同名 token，这里不写
+ * @media (prefers-color-scheme: dark)。
+ *
+ * 选择器归属见 docs/superpowers/specs/2026-08-15-ui-redesign-design.md 第 7 节：
+ * 这里只写归 base.css 的部分，组件专属类名（.lang-select / .translate-btn /
+ * .app-bar / .hero 等）一概不碰，留给 styles/components.css。
+ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/*
+ * 浏览器给 [hidden] 的默认样式是 display:none，但它的优先级低于任何
+ * 带类名的 display 声明。本页里 .witness-grid 之类用了 display:grid/flex，
+ * 不加这条，元素设了 hidden 也照样显示。
+ */
+[hidden] {
+    display: none !important;
+}
+
+body {
+    font-family: var(--font-sans);
+    line-height: var(--leading-normal);
+    color: var(--ink-0);
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.container {
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 0 var(--space-4);
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+}
+
+/* --- 基础排版 --- */
+h1,
+h2,
+h3 {
+    font-weight: 700;
+    line-height: var(--leading-tight);
+    color: var(--ink-0);
+}
+
+h1 {
+    font-size: var(--text-2xl);
+}
+
+h2 {
+    font-size: var(--text-xl);
+}
+
+h3 {
+    font-size: var(--text-lg);
+}
+
+p {
+    line-height: var(--leading-normal);
+}
+
+a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* --- 无障碍：仅供屏幕阅读器 --- */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* --- 焦点环：覆盖所有可聚焦控件，键盘用户才看得到 --- */
+select:focus,
+input:focus,
+textarea:focus,
+button:focus,
+a:focus,
+summary:focus,
+[type="checkbox"]:focus {
+    outline: none;
+}
+
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible,
+[type="checkbox"]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/*
+ * 原生勾选框默认用系统强调色（多数平台是蓝色），在这套暖色板里格外扎眼——
+ * 深色模式下尤其明显。这条是真浏览器截图看出来的，代码和测试都发现不了。
+ */
+[type="checkbox"],
+[type="radio"] {
+    accent-color: var(--accent);
+}
+
+/* --- 表单基元 --- */
+select,
+input,
+textarea {
+    font-family: inherit;
+    font-size: var(--text-base);
+    color: var(--ink-0);
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-md);
+    padding: var(--space-2) var(--space-3);
+    transition: var(--transition);
+}
+
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+    border-color: var(--accent);
+}
+
+.form-control {
+    width: 100%;
+    padding: var(--space-3);
+    border: 2px solid var(--line-strong);
+    border-radius: var(--radius-md);
+    font-size: var(--text-base);
+    transition: var(--transition);
+}
+
+.form-group {
+    margin-bottom: var(--space-4);
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: var(--space-2);
+    font-weight: 500;
+    color: var(--ink-0);
+}
+
+.form-text {
+    display: block;
+    margin-top: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--ink-2);
+    line-height: var(--leading-normal);
+}
+
+.form-text a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.form-text a:hover {
+    text-decoration: underline;
+}
+
+/* --- 按钮基元 --- */
+.btn {
+    padding: var(--space-3) var(--space-5);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: var(--text-base);
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: var(--on-accent);
+}
+
+.btn-primary:hover {
+    background: var(--accent-hover);
+}
+
+.btn-secondary {
+    background: var(--surface-2);
+    color: var(--ink-0);
+    border: 1px solid var(--line-strong);
+}
+
+.btn-secondary:hover {
+    background: var(--line);
+}
+
+.tool-btn,
+.clear-btn {
+    background: none;
+    border: none;
+    color: var(--ink-2);
+    cursor: pointer;
+    padding: var(--space-2);
+    border-radius: var(--radius-sm);
+    transition: var(--transition);
+}
+
+.tool-btn:hover,
+.clear-btn:hover {
+    background: var(--surface-2);
+    color: var(--ink-0);
+}
+
+/* --- 图标：自绘 SVG sprite --- */
+.icon-sprite {
+    display: none;
+}
+
+.icon {
+    width: 1em;
+    height: 1em;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vertical-align: -.125em;
+}
+
+.icon-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* --- 消息条 --- */
+.message {
+    position: fixed;
+    top: 80px;
+    right: var(--space-5);
+    padding: var(--space-4) var(--space-5);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    color: var(--ink-0);
+    box-shadow: var(--shadow-2);
+    border-left: 4px solid var(--line-strong);
+    z-index: 10000;
+    font-weight: 500;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: var(--transition);
+    max-width: 300px;
+}
+
+.message.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.message-success {
+    border-left-color: var(--ok);
+}
+
+.message-error {
+    border-left-color: var(--danger);
+}
+
+.message-warning {
+    border-left-color: var(--warn);
+}
+
+.message-info {
+    border-left-color: var(--accent);
+}
+
+/* --- 模态框 --- */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--scrim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    opacity: 0;
+    visibility: hidden;
+    transition: var(--transition);
+}
+
+.modal-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-2);
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: scale(0.9);
+    transition: var(--transition);
+}
+
+.modal-overlay.show .modal {
+    transform: scale(1);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-5);
+    border-bottom: 1px solid var(--line);
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: var(--ink-0);
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: var(--text-xl);
+    cursor: pointer;
+    color: var(--ink-2);
+    padding: var(--space-1);
+}
+
+.modal-close:hover {
+    color: var(--ink-0);
+}
+
+.modal-body {
+    padding: var(--space-5);
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    border-top: 1px solid var(--line);
+}
+
+.modal-note {
+    margin-bottom: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
+}
+
+.api-status {
+    margin-top: var(--space-4);
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    text-align: center;
+    display: none;
+}
+
+.api-status.success {
+    background: var(--ok-soft);
+    color: var(--ok);
+    border: 1px solid var(--ok);
+    display: block;
+}
+
+.api-status.error {
+    background: var(--accent-soft);
+    color: var(--danger);
+    border: 1px solid var(--danger);
+    display: block;
+}
+
+/* --- 减少动效 --- */
+@media (prefers-reduced-motion: reduce) {
+    .icon-spin {
+        animation: none;
+    }
+
+    .status-indicator {
+        animation: none;
+    }
+
+    *,
+    *::before,
+    *::after {
+        transition: none !important;
+        animation: none !important;
+        transform: none !important;
+    }
+}
+
+/* --- 高对比度 --- */
+@media (prefers-contrast: high) {
+    body {
+        color: var(--ink-0);
+    }
+
+    a {
+        text-decoration: underline;
+    }
+
+    select,
+    input,
+    textarea,
+    .form-control,
+    .btn,
+    .btn-secondary,
+    .modal,
+    .message {
+        border-width: 2px;
+    }
+
+    select:focus-visible,
+    input:focus-visible,
+    textarea:focus-visible,
+    button:focus-visible,
+    a:focus-visible,
+    summary:focus-visible,
+    [type="checkbox"]:focus-visible {
+        outline-width: 3px;
+    }
+}

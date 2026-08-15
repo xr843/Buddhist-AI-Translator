@@ -110,7 +110,7 @@ Frontend:      HTML5 + CSS3 + JavaScript ES6+（无框架、无构建）
 翻译引擎:      MITRA cat-translate（默认，免密钥）/ DeepSeek API（可选）
 语料检索:      MITRA primary search
 术语数据:      dharmamitra-lexicon (CC BY 4.0)
-Icons:         Font Awesome 6.0
+Icons:         内联 SVG sprite（自绘，无第三方图标集依赖）
 Fonts:         Google Fonts (Noto Sans SC/Serif SC)
 Speech:        Web Speech API
 ```
@@ -224,7 +224,10 @@ Requires Node.js 22 or newer. `npm run verify` runs syntax checks, the Worker dr
 ```
 Buddhist-AI-Translator/
 ├── index.html          # Main page
-├── styles.css          # Stylesheet
+├── styles/             # Three-layer stylesheet
+│   ├── tokens.css      # Design tokens, light + dark. The only file allowed raw hex
+│   ├── base.css        # Reset, typography, form/button/icon/modal primitives
+│   └── components.css  # Feature blocks + responsive rules
 ├── src/                # ES modules: translator, mitra client, style, lexicon, config, terms
 │   └── data/           # Generated lexicon index (CC BY 4.0, see docs/lexicon.md)
 ├── worker/             # Optional Cloudflare Worker proxy

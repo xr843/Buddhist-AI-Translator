@@ -159,8 +159,13 @@ test('src/ui.js swaps only real translation text back into the input', async () 
     assert.doesNotMatch(normalized, /consttargetText=resultDiv\.textContent/);
 });
 
-test('styles.css keeps the fixed footer from covering translator content', async () => {
-    const source = await readSource('styles.css');
+test('the stylesheets keep the fixed footer from covering translator content', async () => {
+    // 样式表已拆成 tokens/base/components 三层，这四条约束分散在 base 与 components 里。
+    // 合起来匹配，断言语义与拆分前完全一致。
+    const source = (await Promise.all([
+        readSource('styles/base.css'),
+        readSource('styles/components.css')
+    ])).join('\n');
 
     assert.match(source, /body\s*{[^}]*min-height:\s*100vh/s);
     assert.doesNotMatch(source, /body\s*{[^}]*overflow:\s*hidden/s);

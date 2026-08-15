@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-DVs0fR8XB1jjl1bgTOlKWYtWCgzq/pEgxRTUXDRLz0U='; style-src 'self' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://api.deepseek.com https://dharmamitra.org https://*.workers.dev; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-DVs0fR8XB1jjl1bgTOlKWYtWCgzq/pEgxRTUXDRLz0U='; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.deepseek.com https://dharmamitra.org https://*.workers.dev; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
     <title>慧译通 - 佛教AI翻译器 | Buddhist AI Translator</title>
 
     <!-- SEO Meta Tags -->
@@ -42,21 +42,111 @@
     }
     </script>
 
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles/tokens.css">
+    <link rel="stylesheet" href="styles/base.css">
+    <link rel="stylesheet" href="styles/components.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <header class="header">
-        <nav class="navbar">
-            <div class="nav-container">
-                <div class="nav-menu">
+    <svg class="icon-sprite" aria-hidden="true" focusable="false">
+        <symbol id="i-key" viewBox="0 0 24 24">
+            <circle cx="8" cy="8" r="4"/>
+            <line x1="11" y1="11" x2="21" y2="21"/>
+            <line x1="15" y1="15" x2="17" y2="13"/>
+            <line x1="18" y1="18" x2="20" y2="16"/>
+        </symbol>
+        <symbol id="i-shield" viewBox="0 0 24 24">
+            <path d="M12 3 L19 6 V11 C19 16 16 19.5 12 21 C8 19.5 5 16 5 11 V6 Z"/>
+        </symbol>
+        <symbol id="i-check" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="9"/>
+            <polyline points="7.5,12.5 10.5,15.5 16.5,9"/>
+        </symbol>
+        <symbol id="i-swap" viewBox="0 0 24 24">
+            <polyline points="4,7 20,7"/>
+            <polyline points="16,3 20,7 16,11"/>
+            <polyline points="20,17 4,17"/>
+            <polyline points="8,13 4,17 8,21"/>
+        </symbol>
+        <symbol id="i-sliders" viewBox="0 0 24 24">
+            <line x1="4" y1="6" x2="20" y2="6"/>
+            <circle cx="9" cy="6" r="2"/>
+            <line x1="4" y1="12" x2="20" y2="12"/>
+            <circle cx="15" cy="12" r="2"/>
+            <line x1="4" y1="18" x2="20" y2="18"/>
+            <circle cx="11" cy="18" r="2"/>
+        </symbol>
+        <symbol id="i-layers" viewBox="0 0 24 24">
+            <path d="M12 3 L21 8 L12 13 L3 8 Z"/>
+            <polyline points="3,12 12,17 21,12"/>
+            <polyline points="3,16 12,21 21,16"/>
+        </symbol>
+        <symbol id="i-close" viewBox="0 0 24 24">
+            <line x1="5" y1="5" x2="19" y2="19"/>
+            <line x1="19" y1="5" x2="5" y2="19"/>
+        </symbol>
+        <symbol id="i-mic" viewBox="0 0 24 24">
+            <path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+            <path d="M6 11a6 6 0 0 0 12 0"/>
+            <line x1="12" y1="19" x2="12" y2="22"/>
+            <line x1="8" y1="22" x2="16" y2="22"/>
+        </symbol>
+        <symbol id="i-paste" viewBox="0 0 24 24">
+            <path d="M9 4h6a1 1 0 0 1 1 1v1H8V5a1 1 0 0 1 1-1z"/>
+            <path d="M6 6h12a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z"/>
+            <line x1="9" y1="12" x2="15" y2="12"/>
+            <line x1="9" y1="16" x2="15" y2="16"/>
+        </symbol>
+        <symbol id="i-book" viewBox="0 0 24 24">
+            <path d="M12 5c-1.5-1.5-4-2-8-2v14c4 0 6.5.5 8 2 1.5-1.5 4-2 8-2V3c-4 0-6.5.5-8 2z"/>
+            <line x1="12" y1="5" x2="12" y2="19"/>
+        </symbol>
+        <symbol id="i-copy" viewBox="0 0 24 24">
+            <path d="M8 8h11a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/>
+            <path d="M5 16V5a1 1 0 0 1 1-1h11"/>
+        </symbol>
+        <symbol id="i-download" viewBox="0 0 24 24">
+            <line x1="12" y1="3" x2="12" y2="14"/>
+            <polyline points="7,10 12,15 17,10"/>
+            <polyline points="4,18 4,20 20,20 20,18"/>
+        </symbol>
+        <symbol id="i-volume" viewBox="0 0 24 24">
+            <path d="M4 9v6h4l5 5V4L8 9H4z"/>
+            <path d="M16 9a5 5 0 0 1 0 6"/>
+            <path d="M18.5 6.5a9 9 0 0 1 0 11"/>
+        </symbol>
+        <symbol id="i-stop" viewBox="0 0 24 24">
+            <path d="M6 6h12v12H6z"/>
+        </symbol>
+        <symbol id="i-language" viewBox="0 0 24 24">
+            <path d="M4 5h10v7H9l-2 2v-2H4z"/>
+            <path d="M20 10h-6v6h3l2 2v-2h1z"/>
+        </symbol>
+        <symbol id="i-spinner" viewBox="0 0 24 24">
+            <path d="M12 3a9 9 0 1 0 9 9"/>
+        </symbol>
+    </svg>
+
+    <header class="app-bar">
+        <div class="app-bar-inner">
+            <span class="brand">慧译通 <span class="brand-sub">佛典 AI 翻译</span></span>
+            <div class="app-bar-actions">
+                <div class="api-status-info">
+                    <label class="engine-label" for="engine-select">引擎</label>
+                    <select id="engine-select" class="engine-select">
+                        <option value="auto">自动选择</option>
+                        <option value="mitra">MITRA 佛典引擎（免密钥）</option>
+                        <option value="deepseek">DeepSeek 通用模型</option>
+                    </select>
+                    <span id="api-status-text">API未配置</span>
+                    <span id="api-status-indicator" class="status-indicator"></span>
                 </div>
-                <div class="nav-toggle">
-                    <i class="fas fa-bars"></i>
-                </div>
+                <button class="api-config-btn" id="api-settings-btn" title="配置API密钥">
+                    <svg class="icon" aria-hidden="true"><use href="#i-key"></use></svg>
+                    <span>配置API</span>
+                </button>
             </div>
-        </nav>
+        </div>
     </header>
 
     <main class="main-content">
@@ -70,24 +160,6 @@
         <section class="translator">
             <div class="container">
                 <div class="translator-card">
-                    <!-- 引擎与API配置状态栏 -->
-                    <div class="api-status-bar">
-                        <div class="api-status-info">
-                            <label class="engine-label" for="engine-select">引擎</label>
-                            <select id="engine-select" class="engine-select">
-                                <option value="auto">自动选择</option>
-                                <option value="mitra">MITRA 佛典引擎（免密钥）</option>
-                                <option value="deepseek">DeepSeek 通用模型</option>
-                            </select>
-                            <span id="api-status-text">API未配置</span>
-                            <span id="api-status-indicator" class="status-indicator"></span>
-                        </div>
-                        <button class="api-config-btn" id="api-settings-btn" title="配置API密钥">
-                            <i class="fas fa-key"></i>
-                            <span>配置API</span>
-                        </button>
-                    </div>
-
                     <div class="language-selectors">
                         <div class="language-selector">
                             <label for="source-lang">源语言</label>
@@ -116,7 +188,7 @@
                         
                         <div class="swap-languages">
                             <button class="swap-btn" id="swap-btn">
-                                <i class="fas fa-exchange-alt"></i>
+                                <svg class="icon" aria-hidden="true"><use href="#i-swap"></use></svg>
                             </button>
                         </div>
 
@@ -144,22 +216,24 @@
                         </div>
                     </div>
 
-                    <!-- 译风设置：借鉴 foguang.ai 的多维风格控制 -->
-                    <details class="style-panel" id="style-panel">
-                        <summary class="style-summary-row">
-                            <span class="style-title"><i class="fas fa-sliders-h"></i> 译风设置</span>
-                            <span class="style-summary" id="style-summary"></span>
-                        </summary>
-                        <div class="style-grid" id="style-grid"></div>
-                    </details>
+                    <div class="settings-row">
+                        <!-- 译风设置：借鉴 foguang.ai 的多维风格控制 -->
+                        <details class="style-panel" id="style-panel">
+                            <summary class="style-summary-row">
+                                <span class="style-title"><svg class="icon" aria-hidden="true"><use href="#i-sliders"></use></svg> 译风设置</span>
+                                <span class="style-summary" id="style-summary"></span>
+                            </summary>
+                            <div class="style-grid" id="style-grid"></div>
+                        </details>
 
-                    <!-- 多本合参：同一段落的多语种写本一起送入 -->
-                    <div class="witness-bar">
-                        <label class="witness-switch" for="multi-witness-toggle">
-                            <input type="checkbox" id="multi-witness-toggle">
-                            <span><i class="fas fa-layer-group"></i> 多本合参</span>
-                        </label>
-                        <span class="witness-hint">同一段落的梵／巴／汉／藏写本一起送入，得到一份权衡各本的译文</span>
+                        <!-- 多本合参：同一段落的多语种写本一起送入 -->
+                        <div class="witness-bar">
+                            <label class="witness-switch" for="multi-witness-toggle">
+                                <input type="checkbox" id="multi-witness-toggle">
+                                <span><svg class="icon" aria-hidden="true"><use href="#i-layers"></use></svg> 多本合参</span>
+                            </label>
+                            <span class="witness-hint">同一段落的梵／巴／汉／藏写本一起送入，得到一份权衡各本的译文</span>
+                        </div>
                     </div>
                     <div class="witness-grid" id="witness-grid" hidden>
                         <div class="witness-field" data-lang="sa">
@@ -195,7 +269,7 @@
                             <div class="text-area-header">
                                 <span class="language-label" id="source-label">自动检测</span>
                                 <button class="clear-btn" id="clear-input">
-                                    <i class="fas fa-times"></i>
+                                    <svg class="icon" aria-hidden="true"><use href="#i-close"></use></svg>
                                 </button>
                             </div>
                             <textarea 
@@ -206,10 +280,10 @@
                             ></textarea>
                             <div class="input-tools">
                                 <button class="tool-btn" id="voice-input" title="语音输入">
-                                    <i class="fas fa-microphone"></i>
+                                    <svg class="icon" aria-hidden="true"><use href="#i-mic"></use></svg>
                                 </button>
                                 <button class="tool-btn" id="paste-btn" title="粘贴">
-                                    <i class="fas fa-paste"></i>
+                                    <svg class="icon" aria-hidden="true"><use href="#i-paste"></use></svg>
                                 </button>
                                 <span class="char-count">0 / 5000</span>
                             </div>
@@ -217,7 +291,7 @@
 
                         <div class="translate-button-container">
                             <button class="translate-btn" id="translate-btn">
-                                <i class="fas fa-language"></i>
+                                <svg class="icon" aria-hidden="true"><use href="#i-language"></use></svg>
                                 翻译
                             </button>
                         </div>
@@ -227,16 +301,16 @@
                                 <span class="language-label" id="target-label">现代中文</span>
                                 <div class="output-tools">
                                     <button class="tool-btn" id="provenance-btn" title="在藏经语料中溯源">
-                                        <i class="fas fa-book-open"></i>
+                                        <svg class="icon" aria-hidden="true"><use href="#i-book"></use></svg>
                                     </button>
                                     <button class="tool-btn" id="copy-btn" title="复制">
-                                        <i class="fas fa-copy"></i>
+                                        <svg class="icon" aria-hidden="true"><use href="#i-copy"></use></svg>
                                     </button>
                                     <button class="tool-btn" id="download-btn" title="下载译文">
-                                        <i class="fas fa-download"></i>
+                                        <svg class="icon" aria-hidden="true"><use href="#i-download"></use></svg>
                                     </button>
                                     <button class="tool-btn" id="speaker-btn" title="朗读">
-                                        <i class="fas fa-volume-up"></i>
+                                        <svg class="icon" aria-hidden="true"><use href="#i-volume"></use></svg>
                                     </button>
                                 </div>
                             </div>
@@ -263,7 +337,7 @@
             <div class="modal-header">
                 <h3>API设置</h3>
                 <button class="modal-close" id="modal-close">
-                    <i class="fas fa-times"></i>
+                    <svg class="icon" aria-hidden="true"><use href="#i-close"></use></svg>
                 </button>
             </div>
             <div class="modal-body">
