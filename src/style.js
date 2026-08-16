@@ -129,15 +129,34 @@ const FIDELITY_EN = [
     'Reproduce the nesting of quoted speech exactly as the source marks it, and keep the grammatical person inside a quotation unchanged: what a speaker says of himself stays in the first person.',
     'Canonical stock phrases have settled English renderings; keep their imagery instead of paraphrasing it away — a phrase meaning "the long night" of transmigration stays a long night, it does not become "for a long time".',
     'Keep numerals that count a doctrinal set ("the two kinds of action", "the five aggregates"); never drop the number.',
-    'When you supply an original-language term in parentheses, attach it to the exact word it glosses and to no other word.'
+    'When you supply an original-language term in parentheses, attach it to the exact word it glosses and to no other word.',
+    'Give Indic terms in the form established in Buddhist Sanskrit usage; never invent one by back-forming it from how another witness spells the word, and add nothing that is not in the source.'
 ];
 
 const FIDELITY_ZH = [
     '引号层次照原文复现，引语内的人称不要改动：说话人自述的话保持第一人称。',
     '佛典固定语有既定译法，保留其意象，不要意译掉——如「长夜」轮转应保留 the long night 的意象，不要化为「很长时间」。',
     '保留计数式的数目结构（如「二业」「五蕴」），数字不能省。',
-    '括注原语时，必须挂在它所解释的那个词上，不要挂到邻近的词。'
+    '括注原语时，必须挂在它所解释的那个词上，不要挂到邻近的词。',
+    '印度语词一律用佛教梵语既有的标准形式，不要照另一路写本的拼法倒推生造；原文没有的内容一个字都不要加。'
 ];
+
+/*
+ * 多写本专用规则。只在实际送入一路以上写本时附加——单本时说这些是噪音。
+ *
+ * 由来：2026-08-15 的三段 A/B（汉本 vs 汉+藏合参）显示合参确有效
+ * （「業」由 kriyā 纠正为 karman、六种作业从压缩改为逐条列出、省略句式借藏文还原为设问），
+ * 但同时量出一个稳定的副作用：模型拿到藏文后会**从藏文倒推梵文**——
+ * 「鼻」从标准的 ghrāṇa- 变成 nāsa-（藏文 sna），「率爾心」更是造出了 sraṭ-citta 这个不存在的词；
+ * 藏文段落跨度超出汉文时还会把多出来的内容一并译进去。
+ * 所以合参必须声明底本，不能裸用。详见 docs/competitive-baseline.md。
+ */
+const MULTI_WITNESS_EN = 'Several witnesses of the same passage are supplied. Translate the passage the primary witness attests; the other witnesses are there only to resolve what the primary one leaves ambiguous. Do not carry over material that only the secondary witnesses contain, and do not derive the spelling of an Indic term from a secondary witness.';
+
+/** 多写本时附加的规则；单本时返回空串。 */
+export function multiWitnessRule(witnessCount) {
+    return witnessCount > 1 ? MULTI_WITNESS_EN : '';
+}
 
 /** 恒定保真规则。与五个译风维度并列，但不随其变化。 */
 export function fidelityRules(lang = 'zh') {

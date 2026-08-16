@@ -11,8 +11,8 @@ test('fidelity rules survive every style combination', async () => {
     const { STYLE_DIMENSIONS, buildStyleInstruction } = await import('../src/style.js');
     const en = fidelityRules('en');
 
-    assert.equal(en.length, 4, 'expected the four measured fidelity rules');
-    assert.equal(fidelityRules('zh').length, 4);
+    assert.equal(en.length, 5, "expected the five measured fidelity rules");
+    assert.equal(fidelityRules("zh").length, 5);
 
     for (const [key, spec] of Object.entries(STYLE_DIMENSIONS)) {
         for (const option of spec.options) {
@@ -25,6 +25,24 @@ test('fidelity rules survive every style combination', async () => {
             }
         }
     }
+});
+
+/*
+ * 合参规则只在真送了多路写本时才该出现。单本时附上它是有害的——
+ * 那段话说「其他写本只用于消歧」，而单本时根本没有其他写本，纯属噪音。
+ */
+test('the multi-witness rule appears only when more than one witness is sent', async () => {
+    const { multiWitnessRule } = await import('../src/style.js');
+
+    assert.equal(multiWitnessRule(0), '');
+    assert.equal(multiWitnessRule(1), '', 'a single witness must not trigger the multi-witness rule');
+    assert.ok(multiWitnessRule(2).length > 80, 'two witnesses should trigger it');
+    assert.equal(multiWitnessRule(4), multiWitnessRule(2), 'the rule text should not vary by count');
+
+    // 它守的是实测出来的两个副作用，措辞里必须留着这两点
+    assert.match(multiWitnessRule(2), /primary witness/i, 'must name a primary witness');
+    assert.match(multiWitnessRule(2), /not derive .*Indic term/i, 'must forbid back-forming Indic terms');
+    assert.doesNotMatch(multiWitnessRule(2), /[一-鿿]/, 'read verbatim by the English-side model');
 });
 
 test('the English fidelity rules stay free of CJK', () => {
