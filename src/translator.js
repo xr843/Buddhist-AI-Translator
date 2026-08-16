@@ -1,7 +1,7 @@
 import { API_CONFIG, languageMap, translationCache, MAX_CACHE_SIZE, getProxyURL, hasProxyURL } from './config.js';
 import { getLanguageLabel } from './languages.js';
 import { removeQuotes } from './utils.js';
-import { buildStyleDirectives, buildStyleInstruction, fidelityRules, normalizeStyle } from './style.js';
+import { buildStyleDirectives, buildStyleInstruction, fidelityRules, multiWitnessRule, normalizeStyle } from './style.js';
 import {
     canUseMitra,
     focusForField,
@@ -432,12 +432,17 @@ export async function translateText(request) {
     if (engine === ENGINES.MITRA) {
         const mitraWitnesses = toMitraWitnesses(witnesses, combined);
         const focusField = focusLang ? witnessFieldFor(focusLang, witnesses[focusLang] || '') : null;
+        // 合参必须声明底本：A/B 实测显示裸用会让模型从次要写本倒推梵文、
+        // 并把只在次要写本里的内容一并译进去（见 docs/competitive-baseline.md）。
+        const witnessCount = Object.values(mitraWitnesses).filter(v => v && v.trim()).length;
+        const extraRule = multiWitnessRule(witnessCount);
+
         const text = await translateWithMitra({
             witnesses: mitraWitnesses,
             targetLabel: targetLabelFor(targetLang),
             focus: focusField ? focusForField(focusField) : 'equal',
             context: lexiconContext,
-            styleInstruction: buildStyleInstruction(style)
+            styleInstruction: [buildStyleInstruction(style), extraRule].filter(Boolean).join(' ')
         });
         cleanCache();
         translationCache.set(cacheKey, text);
