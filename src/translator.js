@@ -437,10 +437,28 @@ export async function translateText(request) {
         const witnessCount = Object.values(mitraWitnesses).filter(v => v && v.trim()).length;
         const extraRule = multiWitnessRule(witnessCount);
 
+        /*
+         * 多写本时**不能**默认 focus='equal'。
+         *
+         * 2026-08-16 三臂实测（eval/witness-ab.mjs）：自动取回的平行段来自 fojin
+         * 的 chunk 切分，一个 chunk 约 333 字，而用户粘的往往只有百来字——
+         * 收敛后仍有 15~50 条，覆盖范围远超那一段。focus='equal' 让模型等量对待，
+         * 结果**译出了别的段落**：用户贴「三千大千世界中諸惡魔皆愁毒」，
+         * 译文却是「Māra the Wicked One is pierced by the thorn of grief」。
+         * 那比没有这个功能更糟。
+         *
+         * 所以用户没指定侧重时，以他真正粘进主输入框的那一路为底本——
+         * 这也才与 multiWitnessRule 里「以主写本为准」的措辞一致。
+         */
+        const primaryField = witnessFieldFor(sourceLang, combined) || witnessFieldFor('auto', combined);
+        const effectiveFocus = focusField
+            ? focusForField(focusField)
+            : (witnessCount > 1 && primaryField ? focusForField(primaryField) : 'equal');
+
         const text = await translateWithMitra({
             witnesses: mitraWitnesses,
             targetLabel: targetLabelFor(targetLang),
-            focus: focusField ? focusForField(focusField) : 'equal',
+            focus: effectiveFocus,
             context: lexiconContext,
             styleInstruction: [buildStyleInstruction(style), extraRule].filter(Boolean).join(' ')
         });

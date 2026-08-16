@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { readFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 
 globalThis.localStorage = {
@@ -401,4 +402,38 @@ test('translateWithBuiltIn returns glossary guidance and a recommendation for pa
   assert.match(result, /照见五蕴皆空: perceived that all five aggregates are empty/);
   assert.match(result, /use AI translation/i);
   assert.notEqual(result, 'Avalokiteshvara Bodhisattva');
+});
+
+/*
+ * 多写本时默认 focus 必须落在主写本上，不能是 'equal'。
+ *
+ * 2026-08-16 三臂实测（eval/witness-ab.mjs）：自动取回的平行段来自 fojin 的
+ * chunk 切分，一个 chunk 约 333 字，用户粘的往往只有百来字——收敛后仍有
+ * 15~50 条，覆盖范围远超那一段。focus='equal' 让模型等量对待，结果译出了
+ * **别的段落**：贴「三千大千世界中諸惡魔皆愁毒」，译文却是
+ * 「Māra the Wicked One is pierced by the thorn of grief」。
+ * 那比没有这个功能更糟，所以这条不能被改回去。
+ */
+test('multi-witness translation focuses on the primary witness, never on equal', async () => {
+    const sent = [];
+    const mitra = await import('../src/mitra.js');
+    const original = mitra.translateWithMitra;
+
+    // 直接查 focus 的推导，不打网络
+    const { witnessFieldFor, focusForField } = mitra;
+    const primaryField = witnessFieldFor('zh-classical', '觀自在菩薩行深般若波羅蜜多時');
+
+    assert.equal(primaryField, 'input_chinese');
+    assert.equal(focusForField(primaryField), 'chinese');
+    assert.notEqual(focusForField(primaryField), 'equal');
+
+    // 源码层面钉住：不允许再退回无条件的 'equal'
+    const source = await readFile(new URL('../src/translator.js', import.meta.url), 'utf8');
+    assert.match(source, /witnessCount > 1 && primaryField/, 'the default focus must depend on the primary witness');
+    assert.doesNotMatch(
+        source,
+        /focus:\s*focusField\s*\?\s*focusForField\(focusField\)\s*:\s*'equal'/,
+        'the unconditional equal-focus default caused a real mistranslation; do not restore it'
+    );
+    void sent; void original;
 });
