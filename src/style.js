@@ -117,6 +117,12 @@ const CHINESE = {
 /*
  * 与译风**无关**的保真规则。
  *
+ * 第 6 条的由来：2026-08-15 对齐译风后重跑，模型在《雜阿含》婆蹉種火喻的译文末尾
+ * 自行附上了一段没人要的学术注（"(The Pali parallel, the Aggivacchagotta Sutta,
+ * adds that…)"）——原文没有这句，译风也设了「简洁：只给译文」，第 5 条那句
+ * 「原文没有的内容一个字都不要加」没能拦住它。看着权威的自动补注对佛学工具是危险的，
+ * 所以单列一条，把「括号里只能放一个词、不能放一句话」写死。
+ *
  * 这四条不是风格偏好，是「怎么译都不该错」的东西，所以不做成维度、不给开关，
  * 恒定拼进指令。来源是 2026-08-15 与 foguang.ai 的四段对照：我方赢在术语精确度，
  * 输的四处全部落在这一层——引号层次被拆、人称被改、佛典固定语被意译掉、
@@ -129,16 +135,20 @@ const FIDELITY_EN = [
     'Reproduce the nesting of quoted speech exactly as the source marks it, and keep the grammatical person inside a quotation unchanged: what a speaker says of himself stays in the first person.',
     'Canonical stock phrases have settled English renderings; keep their imagery instead of paraphrasing it away — a phrase meaning "the long night" of transmigration stays a long night, it does not become "for a long time".',
     'Keep numerals that count a doctrinal set ("the two kinds of action", "the five aggregates"); never drop the number.',
-    'When you supply an original-language term in parentheses, attach it to the exact word it glosses and to no other word.',
-    'Give Indic terms in the form established in Buddhist Sanskrit usage; never invent one by back-forming it from how another witness spells the word, and add nothing that is not in the source.'
+    'When you supply an original-language term in parentheses, attach it to the exact word it glosses and to no other word. This governs where a gloss goes, not whether to give one — on that, follow the style setting above.',
+    'Give Indic terms in the full form established in Buddhist Sanskrit usage (śikṣāpada, not a bare śikṣā); never invent one by back-forming it from how another witness spells the word, and where no established form exists, give the translation with no parenthesis at all rather than coining one. Add nothing that is not in the source.'
+,
+    'Output the translation and nothing else. Do not append a note comparing the passage to a parallel in another canon, do not explain what the passage means, and do not mark anything as your own observation — not even inside parentheses. A parenthesis may hold a single term, never a sentence.'
 ];
 
 const FIDELITY_ZH = [
     '引号层次照原文复现，引语内的人称不要改动：说话人自述的话保持第一人称。',
     '佛典固定语有既定译法，保留其意象，不要意译掉——如「长夜」轮转应保留 the long night 的意象，不要化为「很长时间」。',
     '保留计数式的数目结构（如「二业」「五蕴」），数字不能省。',
-    '括注原语时，必须挂在它所解释的那个词上，不要挂到邻近的词。',
-    '印度语词一律用佛教梵语既有的标准形式，不要照另一路写本的拼法倒推生造；原文没有的内容一个字都不要加。'
+    '括注原语时，必须挂在它所解释的那个词上，不要挂到邻近的词——这条管的是位置，不影响该不该加括注，加不加按上面的译风要求。',
+    '印度语词一律用佛教梵语既有的完整标准形式（如 śikṣāpada，不要截成 śikṣā），不要照另一路写本的拼法倒推生造；若某词本无确立形式，只给译名、不加括注，不要自造一个。原文没有的内容一个字都不要加。'
+,
+    '只输出译文。不要在末尾附上与他本（巴利本、藏本等）的比较说明，不要解释文义，不要标注你自己的观察——放在括号里也不行。括号里只能放一个词，不能放一句话。'
 ];
 
 /*

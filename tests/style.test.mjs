@@ -11,8 +11,8 @@ test('fidelity rules survive every style combination', async () => {
     const { STYLE_DIMENSIONS, buildStyleInstruction } = await import('../src/style.js');
     const en = fidelityRules('en');
 
-    assert.equal(en.length, 5, "expected the five measured fidelity rules");
-    assert.equal(fidelityRules("zh").length, 5);
+    assert.equal(en.length, 6, "expected the six measured fidelity rules");
+    assert.equal(fidelityRules("zh").length, 6);
 
     for (const [key, spec] of Object.entries(STYLE_DIMENSIONS)) {
         for (const option of spec.options) {
@@ -43,6 +43,28 @@ test('the multi-witness rule appears only when more than one witness is sent', a
     assert.match(multiWitnessRule(2), /primary witness/i, 'must name a primary witness');
     assert.match(multiWitnessRule(2), /not derive .*Indic term/i, 'must forbid back-forming Indic terms');
     assert.doesNotMatch(multiWitnessRule(2), /[一-鿿]/, 'read verbatim by the English-side model');
+});
+
+/*
+ * 第 6 条守的是一个实际发生过的失败：模型在译文末尾自行附上
+ * "(The Pali parallel, the Aggivacchagotta Sutta, adds that…)" 这样的学术注。
+ * 看着权威的自动补注对佛学工具是危险的——用户会当成译文的一部分。
+ * 「括号里只能放一个词、不能放一句话」这个界限是这条规则的要害，别被改软。
+ */
+test('a rule forbids appended commentary and bounds what a parenthesis may hold', () => {
+    const [en] = fidelityRules('en').filter(r => /Output the translation and nothing else/.test(r));
+    const [zh] = fidelityRules('zh').filter(r => /只输出译文/.test(r));
+
+    assert.ok(en, 'the English rules must forbid appended commentary');
+    assert.ok(zh, 'the Chinese rules must forbid appended commentary');
+
+    for (const [rule, single, sentence] of [[en, /single term/i, /never a sentence/i],
+                                            [zh, /只能放一个词/, /不能放一句话/]]) {
+        assert.match(rule, single, 'must bound a parenthesis to one term');
+        assert.match(rule, sentence, 'must forbid a sentence inside a parenthesis');
+    }
+    // 括号也不是逃生口——规则必须明说括号里也不行
+    assert.match(en, /not even inside parentheses/i);
 });
 
 test('the English fidelity rules stay free of CJK', () => {
