@@ -105,6 +105,58 @@ test('the user-visible footer carries attribution, the licence link and the modi
     assert.match(footer, /NOTICE/);
 });
 
+/*
+ * 2026-08-15 的教训：NOTICE 曾断言 mitra-parallel 是 CC BY-SA 4.0，却没记这条断言
+ * 出自哪里。核查时先 grep 了根 README（0 命中）就险些反过来判成「上游没给许可」——
+ * 真正的声明在 v1/README.md 的 ## License 一节。
+ *
+ * 无法复核的许可断言，和写错的许可断言一样危险：它让下一个人无从判断该信不该信。
+ * 所以每条声明要么带出处，要么老实标 UNVERIFIED。
+ */
+test('every licence claim in NOTICE carries a checkable source or is marked UNVERIFIED', async () => {
+    const notice = await read('NOTICE.md');
+    const sections = notice.split(/\n(?=[-*] `|## )/);
+    // 只查「对第三方数据的许可断言」：既点名了上游资源，又给它安了一个许可名。
+    // 本项目自己的 MIT、以及只是顺带提到许可名的服务说明，不在此列——
+    // 闸门过宽会制造误报，误报多了就没人当真，等于没有闸门。
+    const claims = sections.filter(section =>
+        /CC BY(-SA)? \d\.\d|CC0 1\.0/.test(section)
+        && /`(dharmamitra\/|buddhist-nlp\/|src\/data\/)/.test(section)
+    );
+
+    assert.ok(claims.length >= 2, 'expected NOTICE to record at least two upstream licences');
+
+    for (const section of claims) {
+        const name = section.slice(0, 60).replace(/\s+/g, ' ').trim();
+        const hasSource = /许可声明的出处|声明的出处|LICENSE 文件|## License|README/.test(section);
+        const markedUnverified = /UNVERIFIED/.test(section);
+
+        assert.ok(
+            hasSource || markedUnverified,
+            `licence claim without a checkable source and without an UNVERIFIED marker: ${name}`
+        );
+    }
+});
+
+test('negative licence findings stay scoped to where we actually looked', async () => {
+    const notice = await read('NOTICE.md');
+    const unverified = notice.split(/\n(?=[-*] `|## )/).filter(s => /UNVERIFIED/.test(s));
+
+    for (const section of unverified) {
+        // 「没找到」必须写成「在这些位置没找到」，不能写成「不存在」
+        assert.match(
+            section,
+            /未找到|not found/,
+            'an UNVERIFIED finding must say what was not found'
+        );
+        assert.match(
+            section,
+            /不是对方确认不存在|非对方确认不存在|not .*confirm/i,
+            'an UNVERIFIED finding must state it is not the upstream confirming absence'
+        );
+    }
+});
+
 test('the CC BY-SA corpus stays out of the repository', async () => {
     // mitra-parallel 是 CC BY-SA 4.0，相同方式共享会传染到本项目的分发条件。
     // 一旦哪天引入，这条会红，提醒重新评估而不是悄悄带进来。

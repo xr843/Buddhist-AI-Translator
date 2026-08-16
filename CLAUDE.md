@@ -67,8 +67,16 @@ curl -sS -D - -o /dev/null -X POST https://dharmamitra.org/api-search/primary/ \
 包括：许可必须给全文链接（不能只写标签）、必须声明已改编、声明出处必须可复核、
 「上线前来信告知」必须标为**请求**而不是许可条件。改动署名相关文案时同步这四处。
 
-⚠️ `mitra-parallel` 是 **CC BY-SA 4.0**，会传染分发条件。目前**未使用**，门禁盯着，
-日后若引入需重新评估本项目的分发条件。
+⚠️ `mitra-parallel` 是 **CC BY-SA 4.0**（依据：上游 `v1/README.md` 的 `## License` 一节；
+仓库本身没有 LICENSE 文件）。目前**未使用**，门禁盯着。
+
+别笼统说「会传染全项目」——**SA 只附着在你分发出去的「改编材料」上**：
+打包派生索引随前端分发会触发（那份索引须以 BY-SA 发布），逐字复现片段不触发
+（逐字复制不是 Adapted Material，但 BY 的署名义务仍在），只放服务端输出译文一般不构成 Share。
+
+⚠️⚠️ **v2 的许可状态是 `UNVERIFIED`**：`v2/README.md` 说许可跟随根 README，
+而根 README 全文没有任何许可字样。v1 的声明面向整体数据集，v2 自称是新的 mining run。
+引入 v2 前先去信 dharmamitra-project@gmail.com 确认，别拿 v1 的声明替 v2 背书。
 
 ## 测试约定
 

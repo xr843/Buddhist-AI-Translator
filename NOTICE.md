@@ -87,9 +87,20 @@
 
 ## 四、未使用、因而不受其条款约束的上游资源
 
-- `dharmamitra/mitra-parallel`（**CC BY-SA 4.0**，相同方式共享）——本项目**未使用**，
-  仓库内无任何引用（2026-08-15 全仓库检索命中 0）。特此记录，是因为 SA 条款会传染，
-  若日后引入需重新评估本项目的分发条件。
+- `dharmamitra/mitra-parallel`（**CC BY-SA 4.0**）——本项目**未使用**，
+  仓库内无任何引用（2026-08-15 全仓库检索命中 0）。
+
+  | | |
+  |---|---|
+  | 许可声明的出处 | 上游 **`v1/README.md` 的 `## License` 一节**，原话：<br>“The MITRA-parallel dataset is released under the Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0).” |
+  | 许可全文 | <https://creativecommons.org/licenses/by-sa/4.0/> |
+  | ⚠️ 仓库**没有** `LICENSE` 文件 | 2026-08-15 查：`LICENSE`、`LICENSE.md`、`LICENSE.txt`、`v2/LICENSE` 四个路径均 404，GitHub 许可检测返回 `None`。许可依据仅为上述 README 声明。 |
+  | ⚠️ **v2 的许可指针悬空**，标 `UNVERIFIED` | `v2/README.md` 写「License and citation follow the repository root README」，但根 `README.md` 全文无任何许可字样（2026-08-15 grep 命中 0）。v1 的声明面向整体数据集，而 v2 自称 “a new mining run”。**v2 专属的许可声明在以下位置未找到：上述四个 LICENSE 路径、根 README、`dharmamitra.org` 的 /licensing /license /terms /terms-of-use /about /legal /copyright（均 404）。这是「在这些位置未找到」，不是对方确认不存在。** 引入 v2 前须向 dharmamitra-project@gmail.com 确认。 |
+
+  日后若引入，按用法分别评估，**不要笼统说「会传染全项目」**：
+  - 打包**派生索引**随前端分发 → 触发 ShareAlike，该索引须以 BY-SA 发布；
+  - **逐字**复现语料片段 → 不构成 Adapted Material，SA 够不到，但 BY 的署名义务仍在；
+  - 索引仅置于服务端、对外只输出译文 → 一般不构成对语料的 Share。
 - HuggingFace `buddhist-nlp` 组织下的模型——本项目未自托管、未再分发。
 
 ---

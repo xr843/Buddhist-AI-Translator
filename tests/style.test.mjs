@@ -1,5 +1,42 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { fidelityRules } from '../src/style.js';
+
+/*
+ * 保真规则是「怎么译都不该错」的东西，不是偏好，所以任何译风组合下都必须在场。
+ * 这四条来自 2026-08-15 与 foguang.ai 的四段对照——我方输的四处全在这一层。
+ * 谁把它们做成可开关的维度，这条会红。
+ */
+test('fidelity rules survive every style combination', async () => {
+    const { STYLE_DIMENSIONS, buildStyleInstruction } = await import('../src/style.js');
+    const en = fidelityRules('en');
+
+    assert.equal(en.length, 4, 'expected the four measured fidelity rules');
+    assert.equal(fidelityRules('zh').length, 4);
+
+    for (const [key, spec] of Object.entries(STYLE_DIMENSIONS)) {
+        for (const option of spec.options) {
+            const instruction = buildStyleInstruction({ [key]: option.value });
+            for (const rule of en) {
+                assert.ok(
+                    instruction.includes(rule),
+                    `${key}=${option.value} dropped a fidelity rule: ${rule.slice(0, 48)}…`
+                );
+            }
+        }
+    }
+});
+
+test('the English fidelity rules stay free of CJK', () => {
+    // style_instruction 由英文侧模型逐字照读，混入汉字会被当成待译内容
+    for (const rule of fidelityRules('en')) {
+        assert.doesNotMatch(rule, /[一-鿿]/, `CJK leaked into an English rule: ${rule}`);
+    }
+    for (const rule of fidelityRules('zh')) {
+        assert.match(rule, /[一-鿿]/);
+    }
+});
+
 
 const {
     STYLE_DIMENSIONS,
