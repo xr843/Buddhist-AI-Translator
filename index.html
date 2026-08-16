@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-DVs0fR8XB1jjl1bgTOlKWYtWCgzq/pEgxRTUXDRLz0U='; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.deepseek.com https://dharmamitra.org https://*.workers.dev; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-DVs0fR8XB1jjl1bgTOlKWYtWCgzq/pEgxRTUXDRLz0U='; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.deepseek.com https://dharmamitra.org https://buddhist-translator-api.lqsxianren.workers.dev; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
     <title>慧译通 - 佛教AI翻译器 | Buddhist AI Translator</title>
 
     <!-- SEO Meta Tags -->
@@ -348,8 +348,11 @@
                     <label for="proxy-url-input">Worker 中转地址</label>
                     <input type="url" id="proxy-url-input" class="form-control" placeholder="https://your-worker.workers.dev">
                     <small class="form-text">
-                        部署 <code>worker/</code> 后填在这里即可启用 MITRA 引擎与藏经溯源；
-                        中转本身不需要任何密钥。留空则只能使用 DeepSeek。
+                        本站已内置一个中转，<strong>留空即可正常使用</strong>，无需填写。
+                        <br>这里只给自部署的人用：部署 <code>worker/</code> 后填自己的地址，中转本身不需要任何密钥。
+                        <br><strong>注意：</strong>出于安全考虑，本站的 CSP 只放行内置的那一个中转地址
+                        （避免留下可被滥用的外发通道）。要用自己的中转，需 fork 本仓库并同时修改
+                        <code>index.html</code> 的 <code>connect-src</code>。
                     </small>
                 </div>
                 <div class="form-group">
