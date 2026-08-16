@@ -33,7 +33,13 @@ const fixture = {
         無我: { n: 1523, sa: [['nairātmya', 204], ['anātman', 188]], src: ['T1585'] },
         // 反向对照：跨界的对手更弱时，不该让路
         大乘: { n: 900, sa: [['mahāyāna', 400]], src: ['T1579'] },
-        乘法: { n: 12, sa: [['yāna-dharma', 3]], src: ['T1579'] }
+        乘法: { n: 12, sa: [['yāna-dharma', 3]], src: ['T1579'] },
+        /*
+         * 排序用的一对：「是時」极常见却毫无信息量，
+         * 「尸羅波羅蜜」少见却正是译者需要的。按 n 排，前者会把后者挤掉。
+         */
+        是時: { n: 1430, sa: [['tena samayena', 300]], src: ['T0223'] },
+        尸羅波羅蜜: { n: 99, sa: [['śīlapāramitā', 60]], src: ['T0223'] }
     }
 };
 
@@ -87,11 +93,39 @@ test('findLexiconTerms holds its ground when the crossing rival is weaker', () =
     assert.ok(!found.includes('乘法'));
 });
 
-test('findLexiconTerms reports each distinct term once, ordered by attestation count', () => {
+/*
+ * context 只有 12 个名额。按 n 排等于「越常见越优先」，而常见恰恰没信息量：
+ * 实测一段《大智度論》里，n 降序把「是時」「佛告」塞进去，把四个波羅蜜挤出来，
+ * 译文里那几个梵文括注因此凭空消失。词长是粗糙但有效的信息量代理。
+ */
+test('findLexiconTerms ranks by informativeness, not raw frequency', () => {
+    const found = findLexiconTerms('是時行尸羅波羅蜜').map(entry => entry.term);
+
+    assert.ok(found.includes('尸羅波羅蜜'));
+    assert.ok(
+        found.indexOf('尸羅波羅蜜') < found.indexOf('是時'),
+        `the informative term must outrank the frequent one: ${found.join(', ')}`
+    );
+});
+
+test('buildLexiconContext drops narrative scaffolding so it cannot occupy a slot', () => {
+    const context = buildLexiconContext('是時行尸羅波羅蜜');
+
+    assert.match(context, /尸羅波羅蜜/);
+    assert.doesNotMatch(context, /是時/, 'structural phrases carry no doctrinal information');
+});
+
+/*
+ * 排序契约在 2026-08-16 换过：原来是 n 降序，现在是词长优先、n 作次序。
+ * 换的原因见上面那条 informativeness 测试——n 降序会让虚词把术语挤出 context。
+ * 这里保留的是「每个词只报一次」这个不变的部分，顺带钉住新的次序。
+ */
+test('findLexiconTerms reports each distinct term once, longer terms first', () => {
     const found = findLexiconTerms('涅槃者空，空者涅槃，涅槃亦空');
 
-    assert.deepEqual(found.map(entry => entry.term), ['空', '涅槃']);
-    assert.equal(found[0].n, 5059);
+    // 「空」(n=5059) 比「涅槃」(n=3486) 常见，但更短、信息量更低
+    assert.deepEqual(found.map(entry => entry.term), ['涅槃', '空']);
+    assert.equal(found.filter(entry => entry.term === '涅槃').length, 1, 'no duplicates');
 });
 
 test('findLexiconTerms is safe on empty input and a missing index', () => {
