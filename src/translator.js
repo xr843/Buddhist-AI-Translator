@@ -194,8 +194,18 @@ export function describeTranslationError(error) {
 // DeepSeek API 翻译（支持直连和代理模式）
 export async function translateWithDeepSeek(text, sourceLang, targetLang, options = {}) {
     const proxyURL = getProxyURL();
-    const useProxy = hasProxyURL();
     const apiKey = typeof API_CONFIG.apiKey === 'string' ? API_CONFIG.apiKey.trim() : '';
+
+    /*
+     * 用户自己填的密钥优先于中转。
+     *
+     * 这条曾经坏过：站点把 proxyURL 写死进 config.js 之后（#79），hasProxyURL()
+     * 恒为 true，于是无条件走中转——而那个中转只为 MITRA 而设、没有配
+     * DEEPSEEK_API_KEY，结果是「服务端 API 密钥未配置」，**用户明明填了自己的
+     * 密钥却从未被使用**。本项目是开源自部署的，BYOK 是 DeepSeek 那条路唯一
+     * 现实的用法，不能被公共中转挡住。
+     */
+    const useProxy = hasProxyURL() && !apiKey;
 
     // 检查缓存
     const cacheKey = getCacheKey(text, sourceLang, targetLang, options.cacheVariant || '');

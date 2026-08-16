@@ -215,8 +215,9 @@ test('changing the style must not serve the previous translation from cache', as
 
 test('switching engines must not serve the other engine result from cache', async () => {
     API_CONFIG.apiKey = 'sk-test';
+    // 用户填了密钥就走直连（见下一条测试），所以这里给的是直连的响应形状
     stubFetch(url => (
-        /mitra\/translate/.test(url) ? mitraResponse('mitra 译文') : deepseekResponse('deepseek 译文', true)
+        /mitra\/translate/.test(url) ? mitraResponse('mitra 译文') : deepseekResponse('deepseek 译文')
     ));
     const base = {
         witnesses: { 'zh-classical': '如是我聞' },
@@ -230,6 +231,50 @@ test('switching engines must not serve the other engine result from cache', asyn
     assert.equal(viaMitra.text, 'mitra 译文');
     assert.equal(viaDeepSeek.text, 'deepseek 译文');
     assert.equal(viaDeepSeek.fromCache, false);
+});
+
+/*
+ * 用户自己填的密钥优先于公共中转。
+ *
+ * 这条坏过一次：站点把 proxyURL 写死进 config.js 之后（#79），hasProxyURL()
+ * 恒为 true，DeepSeek 那条路于是无条件走中转——而那个中转只为 MITRA 而设、
+ * 没有配 DEEPSEEK_API_KEY。用户明明填了自己的密钥，却收到
+ * 「服务端 API 密钥未配置」，密钥从未被使用。
+ *
+ * 本项目开源自部署，BYOK 是 DeepSeek 那条路唯一现实的用法。
+ */
+test('a user key routes straight to DeepSeek, bypassing the shared relay', async () => {
+    API_CONFIG.proxyURL = 'https://relay.example';
+    API_CONFIG.apiKey = 'sk-user-own';
+    const calls = stubFetch(() => deepseekResponse('用户自己的密钥译出来的'));
+
+    const outcome = await translateText({
+        witnesses: { en: 'all things are impermanent' },
+        sourceLang: 'en',
+        targetLang: 'zh'
+    });
+
+    assert.equal(outcome.text, '用户自己的密钥译出来的');
+    const target = calls[calls.length - 1];
+    assert.match(target.url, /api\.deepseek\.com/, 'must go direct, not through the relay');
+    assert.doesNotMatch(target.url, /relay\.example/);
+    // 直连时前端自己拼 prompt；走中转的话 body 里只有 text/sourceLang/targetLang
+    assert.ok(Array.isArray(target.body?.messages), 'direct mode sends the chat payload');
+});
+
+test('without a user key the relay still handles DeepSeek', async () => {
+    API_CONFIG.proxyURL = 'https://relay.example';
+    API_CONFIG.apiKey = '';
+    const calls = stubFetch(() => deepseekResponse('中转译出来的', true));
+
+    const outcome = await translateText({
+        witnesses: { en: 'all things are impermanent' },
+        sourceLang: 'en',
+        targetLang: 'zh'
+    });
+
+    assert.equal(outcome.text, '中转译出来的');
+    assert.match(calls[calls.length - 1].url, /relay\.example/);
 });
 
 test('translateText sends the glossary and style into the DeepSeek prompt too', async () => {

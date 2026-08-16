@@ -437,3 +437,29 @@ test('multi-witness translation focuses on the primary witness, never on equal',
     );
     void sent; void original;
 });
+
+/*
+ * BYOK 优先于公共中转。
+ *
+ * 这条坏过一次：站点把 proxyURL 写死进 config.js 之后（#79），hasProxyURL()
+ * 恒为 true，translateWithDeepSeek 于是无条件走中转——而那个中转只为 MITRA
+ * 而设、没有配 DEEPSEEK_API_KEY。结果是用户明明在「配置API」里填了自己的密钥，
+ * 却收到「服务端 API 密钥未配置」，**他的密钥从未被使用**。
+ *
+ * 本项目开源自部署，BYOK 是 DeepSeek 那条路唯一现实的用法，
+ * 不能被一个公共中转挡住。
+ */
+test('a user-supplied DeepSeek key takes precedence over the shared relay', async () => {
+    const source = await readFile(new URL('../src/translator.js', import.meta.url), 'utf8');
+
+    assert.match(
+        source,
+        /const useProxy = hasProxyURL\(\) && !apiKey;/,
+        'the relay must yield to a key the user supplied'
+    );
+    assert.doesNotMatch(
+        source,
+        /const useProxy = hasProxyURL\(\);/,
+        'the unconditional relay ignored the user key entirely; do not restore it'
+    );
+});
