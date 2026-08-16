@@ -23,7 +23,17 @@ const fixture = {
         空: { n: 5059, sa: [['śūnyatā', 644]], src: ['T0220'] },
         空性: { n: 810, sa: [['śūnyatā', 512]], src: ['T1579'] },
         // 只有藏译、没有梵文原语的词条不该进 context
-        八正道: { n: 54, bo: [["'phags pa'i lam brgyad", 6]], src: ['T0026'] }
+        八正道: { n: 54, bo: [["'phags pa'i lam brgyad", 6]], src: ['T0026'] },
+        /*
+         * 「二無」是挖掘出来的碎片（真实数据里 n=71，梵侧只有 6 次），
+         * 「無我」是真词项（n=1523）。在「二無我」上，纯最长优先会先吃掉「二無」
+         * 并跳过「無」，把 nairātmya 换成 dvaya-abhāva 喂给模型。
+         */
+        二無: { n: 71, sa: [['dvaya-abhāva', 6]], src: ['T1585'] },
+        無我: { n: 1523, sa: [['nairātmya', 204], ['anātman', 188]], src: ['T1585'] },
+        // 反向对照：跨界的对手更弱时，不该让路
+        大乘: { n: 900, sa: [['mahāyāna', 400]], src: ['T1579'] },
+        乘法: { n: 12, sa: [['yāna-dharma', 3]], src: ['T1579'] }
     }
 };
 
@@ -45,6 +55,36 @@ test('findLexiconTerms takes the longer term when a shorter one starts at the sa
     const found = findLexiconTerms('觀空性者').map(entry => entry.term);
 
     assert.deepEqual(found, ['空性']);
+});
+
+/*
+ * 最长优先单用会把词砍成两半。判据只看重叠形态，不看统计——
+ * 真实数据里「二無」的对齐支持率 8.5%，而真术语「阿賴耶識」只有 10.5%，
+ * 任何靠统计的阈值都会连真术语一起误伤（2026-08-16 量过 8,610 条的分布）。
+ */
+test('findLexiconTerms yields when a match cuts through a stronger term', () => {
+    // 「二無」[0,2) 与「無我」[1,3) 重叠，且「無我」伸到「二無」右边界之外
+    const found = findLexiconTerms('謂二無我所顯').map(entry => entry.term);
+
+    assert.ok(found.includes('無我'), `expected 無我, got: ${found.join(', ')}`);
+    assert.ok(!found.includes('二無'), `the fragment should have yielded: ${found.join(', ')}`);
+});
+
+test('findLexiconTerms keeps the longer term when the rival is contained, not crossing', () => {
+    // 「識」完全落在「阿賴耶識」之内，没有跨界——最长优先在这里是对的，不该让路。
+    // 「識」(n=3000) 比「阿賴耶識」(n=430) 强得多，若判据用的是统计而非边界，这条会红。
+    const found = findLexiconTerms('說阿賴耶識者').map(entry => entry.term);
+
+    assert.ok(found.includes('阿賴耶識'));
+    assert.ok(!found.includes('識'));
+});
+
+test('findLexiconTerms holds its ground when the crossing rival is weaker', () => {
+    // 「乘法」[1,3) 跨出「大乘」[0,2) 的边界，但它更弱（12 vs 900），不该让路
+    const found = findLexiconTerms('說大乘法者').map(entry => entry.term);
+
+    assert.ok(found.includes('大乘'), `expected 大乘 to hold, got: ${found.join(', ')}`);
+    assert.ok(!found.includes('乘法'));
 });
 
 test('findLexiconTerms reports each distinct term once, ordered by attestation count', () => {
