@@ -97,6 +97,10 @@
             <line x1="9" y1="12" x2="15" y2="12"/>
             <line x1="9" y1="16" x2="15" y2="16"/>
         </symbol>
+        <symbol id="i-book" viewBox="0 0 24 24">
+            <path d="M12 5c-1.5-1.5-4-2-8-2v14c4 0 6.5.5 8 2 1.5-1.5 4-2 8-2V3c-4 0-6.5.5-8 2z"/>
+            <line x1="12" y1="5" x2="12" y2="19"/>
+        </symbol>
         <symbol id="i-copy" viewBox="0 0 24 24">
             <path d="M8 8h11a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/>
             <path d="M5 16V5a1 1 0 0 1 1-1h11"/>
@@ -232,6 +236,13 @@
                         </div>
                     </div>
                     <div class="witness-grid" id="witness-grid" hidden>
+                        <div class="witness-autofill">
+                            <button type="button" class="btn btn-secondary" id="autofill-witnesses">
+                                <svg class="icon" aria-hidden="true"><use href="#i-book"></use></svg>
+                                自动取回平行本
+                            </button>
+                            <span class="witness-autofill-status" id="autofill-status"></span>
+                        </div>
                         <div class="witness-field" data-lang="sa">
                             <label for="witness-sa">梵文</label>
                             <textarea id="witness-sa" class="witness-input" rows="3" placeholder="Devanagari 或 IAST"></textarea>
