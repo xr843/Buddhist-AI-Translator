@@ -39,6 +39,15 @@ const MAX_REQUEST_BODY_BYTES = 64 * 1024;
  */
 const MITRA_TRANSLATE_URL = 'https://dharmamitra.org/api-search/cat-translate/v1/translate';
 const MITRA_SEARCH_URL = 'https://dharmamitra.org/api-search/primary/';
+
+/*
+ * fojin 的托管 MCP 端点。浏览器**永远直连不了**：2026-08-16 实测，
+ * 任何带 Origin 的请求一律 403 且不回 CORS 头（不带 Origin 才 200）。
+ * 那是刻意的——MCP 端点只服务服务端客户端，借此挡住 DNS rebinding 一类攻击。
+ * 所以这条也必须走中转，和 /mitra/* 同理。
+ */
+const FOJIN_MCP_URL = 'https://mcp.fojin.ai/mcp';
+const FOJIN_MAX_WITNESS_CHARS = 1200;
 // 官方文档：长输入可能要 60 秒，上游 Cloudflare 在 100 秒截断。
 const MITRA_UPSTREAM_TIMEOUT_MS = 95000;
 const MITRA_WITNESS_FIELDS = ['input_tibetan', 'input_chinese', 'input_pali', 'input_sanskrit'];
@@ -87,7 +96,10 @@ export default {
         if (url.pathname === '/mitra/search' && request.method === 'POST') {
             return handleMitraSearch(request, env, origin);
         }
-        if (['/translate', '/mitra/translate', '/mitra/search'].includes(url.pathname)) {
+        if (url.pathname === '/fojin/witnesses' && request.method === 'POST') {
+            return handleFojinWitnesses(request, env, origin);
+        }
+        if (['/translate', '/mitra/translate', '/mitra/search', '/fojin/witnesses'].includes(url.pathname)) {
             return jsonResponse(
                 { error: '方法不允许' },
                 origin,
@@ -282,14 +294,16 @@ function trimmedString(value, maxLength) {
     return value.trim().slice(0, maxLength);
 }
 
-async function fetchUpstream(url, payload, timeoutMs) {
+async function fetchUpstream(url, payload, timeoutMs, extraHeaders = {}) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
         return await fetch(url, {
             method: 'POST',
             signal: controller.signal,
-            headers: { 'Content-Type': 'application/json' },
+            // 这里**不能**转发浏览器的 Origin：fojin 的 MCP 端点对任何带 Origin 的
+            // 请求一律 403（2026-08-16 实测），中转的意义正在于以服务端身份去调。
+            headers: { 'Content-Type': 'application/json', ...extraHeaders },
             body: JSON.stringify(payload)
         });
     } finally {
@@ -582,5 +596,104 @@ async function checkRateLimit(env, clientIP) {
         return { allowed: true };
     } catch {
         return { allowed: false, unavailable: true, retryAfter: 60 };
+    }
+}
+
+
+/** 只保留汉字：标点、空白、换行在两侧都要去掉，否则永远匹配不上。 */
+function hanziOnly(text) {
+    let out = '';
+    for (const ch of String(text || '')) {
+        if (ch >= '\u4e00' && ch <= '\u9fff') out += ch;
+    }
+    return out;
+}
+
+/** 调 fojin 的 MCP 工具。它用 JSON-RPC，成功时把结果塞在 content[0].text 里的 JSON 字符串。 */
+async function callFojinTool(name, args, timeoutMs) {
+    const upstream = await fetchUpstream(
+        FOJIN_MCP_URL,
+        { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } },
+        timeoutMs,
+        { Accept: 'application/json, text/event-stream' }
+    );
+    if (!upstream.ok) throw new Error(`fojin ${upstream.status}`);
+
+    const raw = await upstream.text();
+    const envelope = JSON.parse(raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1));
+    const payload = envelope?.result?.content?.[0]?.text;
+    if (typeof payload !== 'string') throw new Error('fojin 返回格式异常');
+    return JSON.parse(payload);
+}
+
+/*
+ * 一段汉文 → 它对应的梵/藏平行本。
+ *
+ * 三步都在服务端做完：定位 → 取整卷平行段 → 收敛到这一段。
+ * 收敛必须在服务端：一卷能返回 685 条（T1579 第 42 卷实测），
+ * 全发给浏览器既慢又没用，而且归一化匹配的规则只该有一处实现。
+ */
+async function handleFojinWitnesses(request, env, origin) {
+    const parsed = await readJsonBody(request, env, origin);
+    if (parsed.response) return parsed.response;
+
+    const passage = trimmedString(parsed.body.text, FOJIN_MAX_WITNESS_CHARS);
+    if (!passage) {
+        return jsonResponse({ error: '缺少必要参数: text' }, origin, env, 400);
+    }
+
+    const rateLimited = await enforceRateLimit(request, env, origin);
+    if (rateLimited) return rateLimited;
+
+    try {
+        const located = await callFojinTool('verify_quote', { quote: passage }, DEEPSEEK_UPSTREAM_TIMEOUT_MS);
+        const match = Array.isArray(located?.matches) ? located.matches[0] : null;
+
+        // 逐字定位失败最常见的原因是这段横跨了 fojin 的 chunk 边界，
+        // 不是语料里没有。照实说，别让界面显示一个空着的框。
+        if (!located?.verbatim || !match) {
+            return jsonResponse(
+                { found: false, reason: 'not-located', similarity: located?.similarity ?? null },
+                origin, env
+            );
+        }
+
+        const aligned = await callFojinTool(
+            'get_parallels',
+            { text_id: match.text_id, juan_num: match.juan_num },
+            DEEPSEEK_UPSTREAM_TIMEOUT_MS
+        );
+
+        const needle = hanziOnly(passage);
+        const chunk = (aligned?.source_chunks || [])
+            .find(candidate => hanziOnly(candidate?.text).includes(needle));
+
+        if (!chunk) {
+            return jsonResponse(
+                { found: false, reason: 'no-parallel', source: { cbeta_id: match.cbeta_id, title: match.title_zh } },
+                origin, env
+            );
+        }
+
+        const facing = (aligned?.parallels || [])
+            .filter(parallel => parallel?.aligns_source_chunk === chunk.chunk_index);
+        const pick = lang => facing
+            .filter(parallel => parallel?.lang === lang && typeof parallel.text === 'string' && parallel.text.trim())
+            .map(parallel => parallel.text.trim())
+            .join(' ');
+
+        return jsonResponse({
+            found: true,
+            source: {
+                cbeta_id: match.cbeta_id,
+                title: match.title_zh,
+                juan: match.juan_num,
+                urn: match.urn
+            },
+            witnesses: { sa: pick('sa'), bo: pick('bo'), pi: pick('pi') },
+            counts: { total: (aligned?.parallels || []).length, facing: facing.length }
+        }, origin, env);
+    } catch (error) {
+        return jsonResponse({ error: `fojin 服务不可用: ${error.message}` }, origin, env, 502);
     }
 }

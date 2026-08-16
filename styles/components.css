@@ -732,3 +732,25 @@
         padding: var(--space-2);
     }
 }
+
+/* --- 平行本自动取回 --- */
+.witness-autofill {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-2);
+}
+
+/*
+ * 状态文字是这个功能的要害，不是装饰：覆盖率行级密度中位数只有 16%，
+ * 「取不到」是常态。没有这行字，用户看到的就是三个空框，无从判断
+ * 是自己贴错了、还是语料本来就没有。
+ */
+.witness-autofill-status {
+    font-size: var(--text-xs);
+    color: var(--ink-2);
+    line-height: var(--leading-normal);
+    flex: 1 1 240px;
+}

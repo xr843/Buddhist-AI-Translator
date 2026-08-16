@@ -11,13 +11,14 @@ import {
     translateWithBuiltIn
 } from './translator.js';
 import { STYLE_DIMENSIONS, defaultStyle, describeStyle, normalizeStyle } from './style.js';
+import { describeWitnessMiss, fetchWitnesses } from './witnesses.js';
 import { initSpeech, startVoiceInput, speakResult } from './speech.js';
 
 // DOM 元素
 let sourceTextArea, targetSelect, sourceSelect, translateBtn, resultDiv, charCount;
 let sourceLabelSpan, targetLabelSpan;
 let engineSelect, styleGrid, styleSummary, multiWitnessToggle, witnessGrid, focusSelect;
-let resultMeta;
+let resultMeta, autofillBtn, autofillStatus;
 
 let currentStyle = defaultStyle();
 
@@ -46,6 +47,8 @@ export function initializeUI() {
     witnessGrid = document.getElementById('witness-grid');
     focusSelect = document.getElementById('focus-select');
     resultMeta = document.getElementById('result-meta');
+    autofillBtn = document.getElementById('autofill-witnesses');
+    autofillStatus = document.getElementById('autofill-status');
 
     // 初始化语音模块
     initSpeech(
@@ -79,6 +82,7 @@ function bindEvents() {
     document.getElementById('swap-btn').addEventListener('click', swapLanguages);
 
     if (engineSelect) engineSelect.addEventListener('change', updateEngineHint);
+    if (autofillBtn) autofillBtn.addEventListener('click', handleAutofillWitnesses);
     if (multiWitnessToggle) multiWitnessToggle.addEventListener('change', updateWitnessVisibility);
     if (sourceSelect) sourceSelect.addEventListener('change', updateWitnessVisibility);
     if (sourceSelect) sourceSelect.addEventListener('change', updateEngineHint);
@@ -310,6 +314,58 @@ function showResultMeta(outcome) {
 
     resultMeta.textContent = parts.join(' · ');
     resultMeta.hidden = false;
+}
+
+/*
+ * 自动取回平行本。
+ *
+ * 覆盖率行级密度中位数只有 16%，「取不到」是常态而不是异常——所以每种失败
+ * 都要说清楚是哪一种，绝不能只留三个空着的输入框让人猜是自己贴错了还是语料没有。
+ */
+async function handleAutofillWitnesses() {
+    if (!autofillBtn || autofillBtn.disabled) return;
+
+    const passage = validateInput(sourceTextArea.value.trim());
+    if (!passage) {
+        setAutofillStatus('请先在左边贴入要取平行本的汉文原文。');
+        return;
+    }
+
+    autofillBtn.disabled = true;
+    setAutofillStatus('正在藏经语料中定位…');
+
+    try {
+        const outcome = await fetchWitnesses(passage);
+
+        if (!outcome.found) {
+            setAutofillStatus(describeWitnessMiss(outcome.reason, outcome.source));
+            return;
+        }
+
+        const filled = [];
+        for (const { lang, id } of WITNESS_INPUTS) {
+            const text = outcome.witnesses[lang];
+            if (!text) continue;
+            const field = document.getElementById(id);
+            if (!field) continue;
+            field.value = text;
+            filled.push(lang);
+        }
+
+        const where = outcome.source?.title
+            ? `《${outcome.source.title}》卷${outcome.source.juan}`
+            : '藏经语料';
+        setAutofillStatus(`已从 ${where} 取回 ${filled.length} 路写本（${filled.join('、')}）。`);
+    } catch (error) {
+        setAutofillStatus(describeWitnessMiss('failed'));
+        console.warn('平行本取回失败:', error.message);
+    } finally {
+        autofillBtn.disabled = false;
+    }
+}
+
+function setAutofillStatus(message) {
+    if (autofillStatus) autofillStatus.textContent = message;
 }
 
 // --- 工具函数 ---
