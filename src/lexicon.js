@@ -128,8 +128,19 @@ export function findLexiconTerms(text, lexicon = cache, options = {}) {
         }
     }
 
-    // 按出现次数排序，截断时留下的是最有把握的那些。
-    found.sort((a, b) => (b.n || 0) - (a.n || 0));
+    /*
+     * 按「信息量」排，不按出现次数排。
+     *
+     * 原来是 n 降序，等于「越常见越优先」——而常见恰恰意味着没有信息量。
+     * 2026-08-16 实测一段《大智度論》：命中 21 条、上限 12 条，n 降序把
+     * 「是時」(1430)、「佛告」(330) 塞了进去，却把尸羅／羼提／毘梨耶／禪
+     * 四个波羅蜜挤了出去，译文里那几个梵文括注因此凭空消失。
+     * 六波羅蜜留住数：n 降序 2/6，改为词长优先 6/6。
+     *
+     * 词长是个粗糙但有效的信息量代理：佛典技术术语是复合词，虚词是短词。
+     * n 退居次序，用来在同长度里挑更有把握的那个。
+     */
+    found.sort((a, b) => b.term.length - a.term.length || (b.n || 0) - (a.n || 0));
     return found.slice(0, limit);
 }
 
@@ -149,11 +160,27 @@ export function formatLexiconEntry(entry) {
  * MITRA 官方文档建议 context 控制在 400 词以内，所以这里限条数，
  * 并且只放有梵文原语、长度 ≥2 的词条 —— 单字与只有藏译的词条噪声偏高。
  */
+/*
+ * 叙事骨架短语。它们命中率高、却不承载教义信息，送给模型只会占掉
+ * context 的名额——上限只有 12 条，每被它们占一个，就少一个真术语。
+ *
+ * 这是一份**人工核对过的小清单**，不是统计过滤。统计过滤在这个数据上试过两次
+ * 都失败：按梵文对齐支持率筛会连「阿賴耶識」(10.5%) 一起删；按「掐掉首字后
+ * 是否有更强词条」筛会把「比丘尼」「沙門尼」「瞿曇彌」判成碎片。
+ * 看着有道理的判据在这里会删真术语，所以宁可手工列。
+ */
+const STRUCTURAL_PHRASES = new Set([
+    '是時', '爾時', '佛告', '佛言', '白佛', '復次', '何以故', '所以者何',
+    '如是', '乃至', '是名', '當知', '應知', '云何', '何等', '若有', '若於',
+    '我今', '汝等', '如前', '廣說', '此中', '以是故', '如是行', '能得'
+]);
+
 export function buildLexiconContext(text, lexicon = cache, options = {}) {
     const maxTerms = Number.isFinite(options.maxTerms) ? options.maxTerms : 12;
     const matches = findLexiconTerms(text, lexicon, { limit: maxTerms * 3 })
         .filter(entry => entry.term.length >= MIN_TERM_LENGTH_FOR_CONTEXT)
         .filter(entry => Array.isArray(entry.sa) && entry.sa.length > 0)
+        .filter(entry => !STRUCTURAL_PHRASES.has(entry.term))
         .slice(0, maxTerms);
 
     if (matches.length === 0) return '';
