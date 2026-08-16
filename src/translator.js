@@ -1,7 +1,7 @@
 import { API_CONFIG, languageMap, translationCache, MAX_CACHE_SIZE, getProxyURL, hasProxyURL } from './config.js';
 import { getLanguageLabel } from './languages.js';
 import { removeQuotes } from './utils.js';
-import { buildStyleDirectives, buildStyleInstruction, normalizeStyle } from './style.js';
+import { buildStyleDirectives, buildStyleInstruction, fidelityRules, normalizeStyle } from './style.js';
 import {
     canUseMitra,
     focusForField,
@@ -122,6 +122,12 @@ export function createTranslationPrompt(text, sourceLang, targetLang, options = 
         prompt += options.lexiconContext;
         prompt += '\n\n';
     }
+
+    // 保真规则与译风分开写：译风是偏好，可由用户切换；保真是「怎么译都不该错」，
+    // 恒定给出。MITRA 那条链路走 buildStyleInstruction，已在其中恒定附上。
+    prompt += '保真要求（不随译风变化）：\n';
+    prompt += fidelityRules('zh').map(line => `- ${line}`).join('\n');
+    prompt += '\n\n';
 
     if (options.style) {
         prompt += '译风要求：\n';

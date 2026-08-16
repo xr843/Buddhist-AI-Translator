@@ -114,6 +114,36 @@ const CHINESE = {
     }
 };
 
+/*
+ * 与译风**无关**的保真规则。
+ *
+ * 这四条不是风格偏好，是「怎么译都不该错」的东西，所以不做成维度、不给开关，
+ * 恒定拼进指令。来源是 2026-08-15 与 foguang.ai 的四段对照：我方赢在术语精确度，
+ * 输的四处全部落在这一层——引号层次被拆、人称被改、佛典固定语被意译掉、
+ * 数目结构被省、括注挂到了邻词上。详见 docs/competitive-baseline.md。
+ *
+ * ⚠️ 英文这份**不能出现任何汉字**：style_instruction 由英文侧模型逐字照读，
+ * tests/style.test.mjs 有一条断言守着（举例只能用罗马字转写）。
+ */
+const FIDELITY_EN = [
+    'Reproduce the nesting of quoted speech exactly as the source marks it, and keep the grammatical person inside a quotation unchanged: what a speaker says of himself stays in the first person.',
+    'Canonical stock phrases have settled English renderings; keep their imagery instead of paraphrasing it away — a phrase meaning "the long night" of transmigration stays a long night, it does not become "for a long time".',
+    'Keep numerals that count a doctrinal set ("the two kinds of action", "the five aggregates"); never drop the number.',
+    'When you supply an original-language term in parentheses, attach it to the exact word it glosses and to no other word.'
+];
+
+const FIDELITY_ZH = [
+    '引号层次照原文复现，引语内的人称不要改动：说话人自述的话保持第一人称。',
+    '佛典固定语有既定译法，保留其意象，不要意译掉——如「长夜」轮转应保留 the long night 的意象，不要化为「很长时间」。',
+    '保留计数式的数目结构（如「二业」「五蕴」），数字不能省。',
+    '括注原语时，必须挂在它所解释的那个词上，不要挂到邻近的词。'
+];
+
+/** 恒定保真规则。与五个译风维度并列，但不随其变化。 */
+export function fidelityRules(lang = 'zh') {
+    return lang === 'en' ? [...FIDELITY_EN] : [...FIDELITY_ZH];
+}
+
 const ORDER = ['literalness', 'termRendering', 'register', 'depth', 'category'];
 
 export function normalizeStyle(style) {
@@ -130,10 +160,10 @@ export function defaultStyle() {
     return normalizeStyle({});
 }
 
-/** 英文散文，交给 MITRA 的 style_instruction。 */
+/** 英文散文，交给 MITRA 的 style_instruction。保真规则恒定附在译风之后。 */
 export function buildStyleInstruction(style) {
     const normalized = normalizeStyle(style);
-    return ORDER.map(key => ENGLISH[key][normalized[key]]).join(' ');
+    return [...ORDER.map(key => ENGLISH[key][normalized[key]]), ...FIDELITY_EN].join(' ');
 }
 
 /** 中文条目，拼进 DeepSeek 的 prompt。 */
