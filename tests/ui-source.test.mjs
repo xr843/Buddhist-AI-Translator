@@ -277,8 +277,11 @@ test('index.html allows the app to reach the Worker proxy and Dharmamitra', asyn
     const directives = cspDirectives(contentSecurityPolicy(source));
     const connectSrc = directives.get('connect-src') || [];
 
-    // 默认 Worker 域名，MITRA 与藏经溯源都经它中转
-    assert.ok(connectSrc.includes('https://*.workers.dev'), 'connect-src should allow the default Worker origin');
+    // 中转必须写成**具体**来源，MITRA 与自动取平行本都经它
+    assert.ok(
+        connectSrc.some(origin => /^https:\/\/[\w-]+\.[\w-]+\.workers\.dev$/.test(origin)),
+        'connect-src must name the Worker origin exactly'
+    );
     // 留着上游修好重复 CORS 头之后可以改回直连
     assert.ok(connectSrc.includes('https://dharmamitra.org'), 'connect-src should allow Dharmamitra');
     // 生产 CSP 不该带本地开发地址
@@ -286,6 +289,23 @@ test('index.html allows the app to reach the Worker proxy and Dharmamitra', asyn
         !connectSrc.some(source => /127\.0\.0\.1|localhost/.test(source)),
         'the shipped CSP must not carry a localhost development origin'
     );
+
+    /*
+     * ⚠️ connect-src 里不许有通配符主机。
+     *
+     * 这条曾经是 https://*.workers.dev —— 而 workers.dev 子域**任何人都能免费注册**。
+     * CSP 的作用本是「即使页面被注入脚本，数据也只能发往白名单」；一个人人可注册的
+     * 通配符等于把这道防线开了个口子，用户填在 localStorage 里的 DeepSeek 密钥
+     * 可以被外发到攻击者自己的 Worker。收紧的代价是自部署者要 fork 改这一行，
+     * 换来的是密钥外发通道被堵死。
+     */
+    for (const origin of connectSrc) {
+        assert.doesNotMatch(
+            origin,
+            /^https:\/\/\*/,
+            `wildcard host in connect-src is an exfiltration channel: ${origin}`
+        );
+    }
 });
 
 test('worker README explains why the MITRA proxy exists and how to reach it', async () => {

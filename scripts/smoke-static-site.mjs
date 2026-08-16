@@ -86,8 +86,9 @@ function startStaticServer() {
 const MITRA_TRANSLATION = 'Avalokiteshvara Bodhisattva, practising the deep perfection of wisdom.';
 // 浏览器不能直连 dharmamitra.org（对方在实际响应里重复发 CORS 头），
 // 所以 MITRA 一律走 Worker 中转。这里假装已经部署了一个。
-// 用 *.workers.dev，因为 index.html 的 CSP connect-src 放行的正是这个通配符
-const PROXY_ORIGIN = 'https://smoke-translator.workers.dev';
+// 必须与 index.html 的 CSP connect-src 逐字一致：那里已从 *.workers.dev 收紧成
+// 单一来源，随便编一个 workers.dev 地址会被 CSP 直接拦掉，测试会以看不懂的方式红。
+const PROXY_ORIGIN = 'https://buddhist-translator-api.lqsxianren.workers.dev';
 
 /**
  * MITRA 是默认引擎，所以冒烟测试必须把中转拦下来。

@@ -95,17 +95,27 @@ ALLOWED_ORIGINS = "https://xr843.github.io http://127.0.0.1:8000"
 proxyURL: 'https://buddhist-translator-api.<your-subdomain>.workers.dev'
 ```
 
-设置后前端自动切换为代理模式：MITRA 引擎与藏经溯源随之可用，DeepSeek 也不再需要
-用户自己输入密钥。自部署的人若不想改源码，也可以在站点的「配置API」弹窗里
-填写自己的 Worker 地址，存在浏览器本地。
+设置后前端自动切换为代理模式，MITRA 引擎与自动取回平行本随之可用。
+DeepSeek 那条路仍走用户自己的密钥——公共部署不该替所有访客垫付费用，
+所以中转默认不配 `DEEPSEEK_API_KEY`，除非你确实想自掏腰包。
 
-`index.html` 的 Content-Security-Policy 默认已放行 `https://*.workers.dev`，
-用默认 Worker 域名可以直接用。**若你用自定义域名，必须把它加进 `connect-src`**，
-并建议同时把通配符收窄成你实际的 Worker URL：
+⚠️ **CSP 只放行一个具体的 Worker 来源，必须同步修改。**
+
+`index.html` 的 `connect-src` 里写的是本仓库部署的那一个地址：
 
 ```html
-connect-src 'self' https://api.deepseek.com https://dharmamitra.org https://buddhist-translator-api.<your-subdomain>.workers.dev;
+connect-src 'self' https://api.deepseek.com https://dharmamitra.org https://buddhist-translator-api.lqsxianren.workers.dev;
 ```
+
+换成你自己的地址后才能用。**这里以前是 `https://*.workers.dev` 通配符，
+2026-08-16 收紧掉了**：`workers.dev` 子域任何人都能免费注册，而 CSP 的作用本是
+「即使页面被注入脚本，数据也只能发往白名单」——一个人人可注册的通配符等于
+把这道防线开了个口子，用户存在 localStorage 里的 DeepSeek 密钥可以被外发到
+攻击者自己的 Worker。
+
+代价是：**站点的「配置API」弹窗里填别人的 Worker 地址不再生效**（CSP 写在 meta 里，
+运行时改不了）。要用自己的中转，就得 fork 本仓库并同时改这一行。
+`tests/ui-source.test.mjs` 有门禁禁止 `connect-src` 里再出现通配符主机。
 
 ### 本地开发
 
