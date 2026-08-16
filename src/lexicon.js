@@ -66,10 +66,43 @@ export function getLoadedLexicon() {
 }
 
 /**
+ * 一个命中是不是把某个更强的词从中间切断了。
+ *
+ * 判据只看**重叠形态**，不看统计——因为统计区分不了：
+ * 「二無」的对齐支持率 8.5%，而真术语「阿賴耶識」只有 10.5%，
+ * 任何能删掉前者的阈值都会连后者一起删掉（2026-08-16 实测 8,610 条的分布）。
+ *
+ *   阿賴耶識 [0,4) ⊃ 識 [3,4)      短的**完全包含**在长的里 → 最长优先是对的
+ *   二無     [0,2) ✕ 無我 [1,3)    短的**跨出**长的右边界   → 长的把一个词砍成了两半
+ *
+ * 只有跨界、且证据更强时才让路。`識`(n=5589) 虽然比 `阿賴耶識`(n=430) 强，
+ * 但它不跨界，所以不会触发——这条判据不会误伤真术语。
+ */
+function cutsThroughStrongerTerm(text, entries, start, length) {
+    const end = start + length;
+    const here = entries[text.slice(start, end)];
+
+    for (let j = start + 1; j < end; j += 1) {
+        const maxLength = Math.min(MAX_TERM_LENGTH, text.length - j);
+        for (let rivalLength = maxLength; rivalLength >= 1; rivalLength -= 1) {
+            if (j + rivalLength <= end) break;   // 被包含，不算跨界
+            const rival = entries[text.slice(j, j + rivalLength)];
+            if (rival && (rival.n || 0) > (here?.n || 0)) return true;
+        }
+    }
+
+    return false;
+}
+
+/**
  * 在文本里找出索引收录的术语。
  *
  * 用「最长优先」的滑窗扫描：从每个位置起先试最长的词，命中就跳过整个词，
  * 这样「阿賴耶識」不会被拆成「識」，也不会同时报「阿賴耶識」和「識」两条。
+ *
+ * 但最长优先单用会出事：在「二無我」上它先命中碎片「二無」并吞掉「無」，
+ * 于是收录在册的「無我」(n=1523) 根本没机会参选，模型被喂进 `dvaya-abhāva`——
+ * 而正解是 nairātmya。所以命中前先查它有没有把更强的词砍断。
  */
 export function findLexiconTerms(text, lexicon = cache, options = {}) {
     const entries = lexicon?.entries;
@@ -85,6 +118,7 @@ export function findLexiconTerms(text, lexicon = cache, options = {}) {
             const candidate = text.slice(i, i + length);
             const entry = entries[candidate];
             if (!entry) continue;
+            if (cutsThroughStrongerTerm(text, entries, i, length)) continue;
             if (!seen.has(candidate)) {
                 seen.add(candidate);
                 found.push({ term: candidate, ...entry });

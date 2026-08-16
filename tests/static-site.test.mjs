@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -112,17 +113,61 @@ test('project structure does not keep the legacy bundled script', async () => {
     );
 });
 
-test('README live demo links match the canonical site URL', async () => {
+/*
+ * 站点地址露在五处：index.html 的 canonical / og:url / twitter:url / JSON-LD，
+ * 以及 README 的三个链接。
+ *
+ * 这条测试**不写死具体域名**，而是以 canonical 为唯一真源，比对其余各处是否跟上。
+ * 上一版把域名硬编码了四遍，换域名时连测试一起改——那样测试是负担不是护栏。
+ *
+ * 将来若绑自定义域名（GitHub Pages 靠仓库根的 CNAME 文件认），
+ * 只需改 canonical 与新增 CNAME，其余各处由这条测试保证不掉队。
+ */
+test('every place that states the site URL agrees with the canonical link', async () => {
     const [html, readme] = await Promise.all([
         readFile(path.join(repoRoot, 'index.html'), 'utf8'),
         readFile(path.join(repoRoot, 'README.md'), 'utf8')
     ]);
-    const canonicalUrl = html.match(/<link rel="canonical" href="([^"]+)">/)?.[1];
 
-    assert.equal(canonicalUrl, 'https://xr843.github.io/Buddhist-AI-Translator/');
-    assert.match(readme, /\[!\[Live Demo\]\([^)]+\)\]\(https:\/\/xr843\.github\.io\/Buddhist-AI-Translator\/\)/);
-    assert.match(readme, /在线使用\*\*: \[https:\/\/xr843\.github\.io\/Buddhist-AI-Translator\/\]/);
-    assert.match(readme, /Online Demo\*\*: \[https:\/\/xr843\.github\.io\/Buddhist-AI-Translator\/\]/);
+    const siteUrl = html.match(/<link rel="canonical" href="([^"]+)">/)?.[1];
+    assert.ok(siteUrl, 'index.html must declare a canonical URL');
+    assert.match(siteUrl, /^https:\/\/[^\s"]+\/$/, 'the canonical URL should be absolute and end in a slash');
+
+    assert.equal(html.match(/<meta property="og:url" content="([^"]+)">/)?.[1], siteUrl);
+    assert.equal(html.match(/<meta name="twitter:url" content="([^"]+)">/)?.[1], siteUrl);
+    assert.ok(html.includes(`"url": "${siteUrl}"`), 'the JSON-LD url must match too');
+
+    const escaped = siteUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    for (const pattern of [
+        new RegExp(`\\[!\\[Live Demo\\]\\([^)]+\\)\\]\\(${escaped}\\)`),
+        new RegExp(`在线使用\\*\\*: \\[${escaped}\\]`),
+        new RegExp(`Online Demo\\*\\*: \\[${escaped}\\]`)
+    ]) {
+        assert.match(readme, pattern);
+    }
+
+    // 绑了自定义域名就必须有 CNAME 文件，否则 GitHub Pages 认不出来，站点会 404
+    const host = new URL(siteUrl).hostname;
+    if (!host.endsWith('.github.io')) {
+        const cname = await readFile(path.join(repoRoot, 'CNAME'), 'utf8').catch(() => null);
+        assert.equal(cname?.trim(), host, 'a custom canonical host needs a matching CNAME file');
+    }
+});
+
+/*
+ * JSON-LD 被 CSP 的 script-src sha256 覆盖着。改动 URL 时若不重算哈希，
+ * 整页脚本会被 CSP 拦死——而这在本地静态服务器上不一定复现，很容易漏。
+ */
+test('the CSP hash matches the JSON-LD block it covers', async () => {
+    const html = await readFile(path.join(repoRoot, 'index.html'), 'utf8');
+    const block = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1];
+    const declared = html.match(/'(sha256-[A-Za-z0-9+/=]+)'/)?.[1];
+
+    assert.ok(block, 'expected a JSON-LD block');
+    assert.ok(declared, 'expected a script-src hash in the CSP');
+
+    const actual = 'sha256-' + createHash('sha256').update(block, 'utf8').digest('base64');
+    assert.equal(actual, declared, 'recompute the CSP hash after editing the JSON-LD block');
 });
 
 test('verification includes a real browser smoke check in CI', async () => {
