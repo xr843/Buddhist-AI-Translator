@@ -353,13 +353,18 @@
                     </small>
                 </div>
                 <div class="form-group">
-                    <label for="api-key-input">DeepSeek API密钥（可选）</label>
+                    <label for="api-key-input">DeepSeek API密钥（可选，填了才用得上下面这些语种）</label>
                     <input type="password" id="api-key-input" class="form-control" placeholder="请输入您的DeepSeek API密钥">
                     <small class="form-text">
-                        请访问 <a href="https://platform.deepseek.com" target="_blank" rel="noopener noreferrer">DeepSeek平台</a> 获取您的API密钥。
+                        <strong>不填也能用</strong>——梵文、巴利文、藏文、文言文译成现代中文／英文／法文等
+                        12 种现代语言，走 MITRA 佛典引擎，不需要任何密钥。
+                        <br><strong>这些情况才需要填：</strong>
+                        <br>• 译成文言文、梵文、藏文、巴利文（MITRA 只输出现代语言）
+                        <br>• 源语言不是梵／巴／汉／藏（例如从英文、日文译出）
+                        <br>密钥在 <a href="https://platform.deepseek.com" target="_blank" rel="noopener noreferrer">DeepSeek 平台</a> 申请，
+                        用量记在你自己账上。
                         <br><strong>安全提示：</strong>
-                        <br>• 密钥仅保存在您的浏览器本地存储中
-                        <br>• 不会发送给任何第三方服务器
+                        <br>• 密钥只存在你自己的浏览器里，直接发往 DeepSeek，不经过本站的中转
                         <br>• 请勿在公共设备上保存密钥
                         <br>• 定期更换API密钥以确保安全
                     </small>
