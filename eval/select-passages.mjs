@@ -31,7 +31,8 @@ const SOURCES = [
 
 const MIN_CHARS = 80;
 const MAX_CHARS = 190;
-const WANT = 15;
+const WANT = Number(process.env.WANT || 15);
+const PER_SOURCE = Number(process.env.PER_SOURCE || Math.max(4, Math.ceil(WANT / 5)));
 
 function stripMarkup(xml) {
     return xml
@@ -119,12 +120,14 @@ async function main() {
         .filter(candidate => candidate.hits >= 6)
         .sort((a, b) => b.score - a.score);
 
-    // 每部经最多取 4 段，避免结论被单一文体主导
+    // 每部经最多取这么多段，避免结论被单一文体主导。
+    // ⚠️ 上限乘经数就是硬天花板：5 部 × 4 = 20，WANT 再大也没用。
+    // 2026-08-17 扩池时就撞上了这个，第一次跑 WANT=40 只出 20 段。
     const perTitle = new Map();
     const picked = [];
     for (const candidate of scored) {
         const used = perTitle.get(candidate.title) || 0;
-        if (used >= 4) continue;
+        if (used >= PER_SOURCE) continue;
         perTitle.set(candidate.title, used + 1);
         picked.push(candidate);
         if (picked.length >= WANT) break;

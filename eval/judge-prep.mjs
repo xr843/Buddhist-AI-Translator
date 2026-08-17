@@ -22,13 +22,15 @@
  *    卷子里一个字都没有。
  *
  * 用法：
- *   node eval/judge-prep.mjs            # 生成 judge-order1.json / judge-order2.json / judge-key.json
+ *   node eval/judge-prep.mjs                              # 默认卷源 eval/blind-pairs.json
+ *   PAIRS=eval/lexicon-onoff-pairs.json node eval/judge-prep.mjs   # 换一份配对
  */
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const PREFIX = process.env.PREFIX || 'judge';
 
 /* ── 对照题：把好译文弄坏，弄法与本轮规则无关 ─────────────────── */
 
@@ -75,7 +77,9 @@ const DAMAGE = [
 /* ── 编卷 ─────────────────────────────────────────────────────── */
 
 async function main() {
-    const pairs = JSON.parse(await readFile(path.join(repoRoot, 'eval/blind-pairs.json'), 'utf8'));
+    const pairsFile = process.env.PAIRS || 'eval/blind-pairs.json';
+    const pairs = JSON.parse(await readFile(path.resolve(repoRoot, pairsFile), 'utf8'));
+    process.stderr.write(`卷源：${pairsFile}（${pairs.length} 对）\n`);
 
     const items = [];
 
@@ -127,9 +131,9 @@ async function main() {
         key.push({ n: number, ...item.key });
     });
 
-    await writeFile(path.join(repoRoot, 'eval/judge-order1.json'), JSON.stringify(order1, null, 1));
-    await writeFile(path.join(repoRoot, 'eval/judge-order2.json'), JSON.stringify(order2, null, 1));
-    await writeFile(path.join(repoRoot, 'eval/judge-key.json'), JSON.stringify(key, null, 1));
+    await writeFile(path.join(repoRoot, `eval/${PREFIX}-order1.json`), JSON.stringify(order1, null, 1));
+    await writeFile(path.join(repoRoot, `eval/${PREFIX}-order2.json`), JSON.stringify(order2, null, 1));
+    await writeFile(path.join(repoRoot, `eval/${PREFIX}-key.json`), JSON.stringify(key, null, 1));
 
     const controls = key.filter(entry => entry.type === 'control');
     process.stderr.write(
