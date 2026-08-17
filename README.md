@@ -22,8 +22,8 @@
 ## 项目简介
 
 慧译通是一款专为佛教文献翻译设计的 AI 翻译平台。默认使用佛典专用的 MITRA 神经翻译引擎
-（Dharmamitra 项目，东北大学），**打开即用、无需任何密钥**；并以 8,610 条从平行语料挖掘的
-实证术语对照为参考，为学者、修行者和佛学爱好者提供准确、可溯源的多语种翻译。
+（Dharmamitra 项目，东北大学），**打开即用、无需任何密钥**，为学者、修行者和佛学爱好者
+提供多语种佛典翻译。
 
 ### 核心特性
 
@@ -33,7 +33,7 @@
 | **多本合参** | 同一段落的多语种写本一起送入，得到一份权衡各本的译文，可指定侧重写本 |
 | **译风控制** | 文本类别 + 译法／术语呈现／语体／注释深度，五维组合成给模型的指令 |
 | **出处溯源** | 一键在藏经语料中检索原文，返回经名、`segmentnr` 与阅读室深链 |
-| **实证术语对照** | 8,610 条汉语术语 → 梵文原语／藏译，带出现次数与大正藏经号 |
+| **实证术语索引** | 8,610 条汉语术语 → 梵文原语／藏译，带出现次数与大正藏经号（数据资产，**默认不参与翻译**，见下） |
 | **18 种语言** | 梵文、巴利文、藏文、文言文、现代中文、英文等 |
 | **语音功能** | 语音输入 + 多语言朗读，支持分段高亮 |
 | **结果导出** | 一键下载译文、原文、引擎与译风信息为 `.txt` 文件 |
@@ -131,7 +131,7 @@ Speech:        Web Speech API
 - **中观学派**: 中道、空性、缘起、二谛...
 - **净土/禅宗**: 阿弥陀佛、念佛、顿悟、明心见性...
 
-**实证对照层** `src/data/lexicon.json`（8,610 条，按需加载）:
+**实证对照层** `src/data/lexicon.json`（8,610 条，**默认不加载、不参与翻译**，见下方说明）:
 从 [dharmamitra-lexicon](https://github.com/dharmamitra/dharmamitra-lexicon)（CC BY 4.0）
 挖掘的汉语术语 → 梵文原语／藏译，每条带出现次数与大正藏经号。例如
 
@@ -142,6 +142,24 @@ Speech:        Web Speech API
 | 空 | śūnyatā (644) / śūnya (630) / **ākāśa (232)** | stong pa nyid |
 
 （「空」同时对应 śūnyatā 与 ākāśa，正是手写术语表容易漏掉的一类分歧。）
+
+> ### ⚠️ 这一层默认不参与翻译（2026-08-17 起）
+>
+> 两轮盲评（共 55 段，6 与 12 位互不通气的判官，配已知答案的对照题）都**测不出正收益**：
+>
+> | 实验 | 结果 |
+> |---|---|
+> | 改前 vs 改后（15 段） | 改后 2 : 4 改前，p = 0.688 |
+> | 术语库 ON vs OFF（40 段） | ON 9 : 12 OFF，p = 0.664 |
+>
+> 第二轮的语料是专为「让术语库的作用显现」挑的（密集命中且命中词给出 ≥3 个不同梵文对应），
+> **主场没赢**。唯一失衡的败因是梵文括注注错（ON 30 次 : OFF 6 次），根因是
+> **按语料频次排序，而频次不跟正确性走**——`薩婆若` 的首选形式是 `sarva-ākāra-jña`（一切種智，错），
+> 正确的 `sarvajña` 排第 4；`所知障` 给的是 `jñā-āvaraṇa`，正确的 `jñeya-āvaraṇa` 不在表里。
+>
+> 所以数据与代码都保留（它本身是有价值的资产），但**翻译链路默认不注入**。
+> 传 `useLexicon: true` 可开回来；要改回默认开，请先跑 `eval/lexicon-onoff.mjs` 拿出数字。
+> 完整记录见 [`eval/RESULTS.md`](eval/RESULTS.md)。
 
 这一层是机器挖掘、未经逐条审定的。构建方法、过滤依据与**抽样实测精确率 87.5%**
 见 [docs/lexicon.md](docs/lexicon.md)。
@@ -156,8 +174,7 @@ Speech:        Web Speech API
 
 Buddhist AI Translator is a specialized translation platform for Buddhist texts. It runs on the
 domain-tuned **MITRA** neural translation engine (Dharmamitra project, Tohoku University) by
-default — **no API key required** — and grounds its output in 8,610 attested term correspondences
-mined from aligned canonical parallels.
+default — **no API key required**.
 
 ### Key Features
 
@@ -167,7 +184,7 @@ mined from aligned canonical parallels.
 | **Multi-witness translation** | Feed several language witnesses of one passage; get a single synthesised translation, optionally weighted toward a base text |
 | **Style control** | Source category plus literalness / term rendering / register / gloss depth, compiled into the model instruction |
 | **Provenance lookup** | Search the canonical corpus for the source passage; get titles, segment IDs and reading-room deep links |
-| **Attested glossary** | 8,610 Chinese terms mapped to their Sanskrit originals and Tibetan renderings, with occurrence counts and Taishō numbers |
+| **Attested term index** | 8,610 Chinese terms mapped to their Sanskrit originals and Tibetan renderings, with occurrence counts and Taishō numbers. A data asset — **not fed into translation by default**; see below |
 | **18 Languages** | Sanskrit, Pali, Tibetan, Classical Chinese, Modern Chinese, English, etc. |
 | **Voice Support** | Speech input + multi-language text-to-speech with segment highlighting |
 | **Result Export** | Download source, translation, engine and style metadata as a `.txt` file |

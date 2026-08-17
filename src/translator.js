@@ -410,7 +410,29 @@ export async function translateText(request) {
         style,
         focusLang = '',
         preference = 'auto',
-        useLexicon = true
+        /*
+         * 默认**不注入**术语库。2026-08-17 起。
+         *
+         * 两轮盲评（共 55 段、6 与 12 位互不通气的判官、对照题守着）都测不出正收益：
+         *   · 改前 vs 改后（15 段）        改后 2 : 4 改前，p = 0.688
+         *   · 术语库 ON vs OFF（40 段）    ON 9 : 12 OFF，p = 0.664
+         * 而且第二轮的语料是 select-passages.mjs 专为「让术语库的作用显现」挑的
+         * ——术语库密集命中且命中词给出 ≥3 个不同梵文对应。**主场没赢。**
+         *
+         * 唯一失衡的败因是梵文括注注错（ON 30 次 : OFF 6 次；按条目 5:1，p = 0.219）。
+         * 根因查到了：术语库按语料频次排序，而频次不跟正确性走，这里把排第一的递给模型：
+         *   薩婆若 首选 sarva-ākāra-jña（一切種智），正确的 sarvajña 排第 4
+         *   所知障 首选 jñā-āvaraṇa，正确的 jñeya-āvaraṇa 不在表里
+         *   有漏   首选 āsrava（漏），正确的 sa āsrava 排第 2
+         * 早先量的 87.5% 精确率量的是「这是不是一个真词条」，不是「首选形式对不对」。
+         *
+         * 数据与代码都留着——8,610 条挖掘结果本身是资产，只是在翻译链路上没有它的位置。
+         * 传 useLexicon: true 就能开回来（eval/ 下的脚本正是这么用的）。
+         * ⚠️ 要改回默认开，先跑一轮 eval/lexicon-onoff.mjs 拿出数字，别凭感觉。
+         *
+         * 完整记录见 eval/RESULTS.md「决定性实验」一节。
+         */
+        useLexicon = false
     } = request || {};
 
     const combined = joinWitnessesForPrompt(witnesses);

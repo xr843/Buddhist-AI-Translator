@@ -131,6 +131,12 @@ async function runSmokeCheck() {
     const pageErrors = [];
     page.on('pageerror', error => pageErrors.push(error.message));
 
+    // 术语索引默认不参与翻译（两轮盲评测不出正收益，见 docs/lexicon.md）。
+    // 单元测试只管到 translateText 那一层；这里记全部真实请求，
+    // 是为了拦住「别的地方偷偷去取它」——那样流量照付，收益还是零。
+    const requestedURLs = [];
+    page.on('request', request => requestedURLs.push(request.url()));
+
     await stubMitra(page);
     // 中转地址存在浏览器本地，等同于用户在设置里填过一次
     await page.addInitScript(origin => {
@@ -152,6 +158,18 @@ async function runSmokeCheck() {
     const metaText = (await page.locator('#result-meta').textContent() || '').trim();
     if (!/MITRA/.test(metaText)) {
       throw new Error(`Expected the result meta line to name the MITRA engine, received: ${metaText}`);
+    }
+
+    // 一次完整翻译之后，那份 830 KB 的索引一次都不该被取
+    const lexiconRequests = requestedURLs.filter(url => url.includes('lexicon.json'));
+    if (lexiconRequests.length > 0) {
+      throw new Error(
+        `A translation must not fetch the 830 KB term index (default is off): ${lexiconRequests.join(', ')}`
+      );
+    }
+    // 结果行也不该再宣称注入了术语
+    if (/已注入/.test(metaText)) {
+      throw new Error(`The meta line still claims injected glossary terms: ${metaText}`);
     }
 
     // 2. 界面只留翻译：术语对照与藏经溯源两个结果面板已移除。
