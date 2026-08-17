@@ -33,8 +33,13 @@ curl -sS -D - -o /dev/null -X POST https://dharmamitra.org/api-search/primary/ \
 ## ⚠️ 上游有限流
 
 实测 2026-08-15：约 **10 次请求/分钟**后回 429，**不带 `Retry-After`**，约 80 秒恢复。
-整部经模式每块间隔 6 秒并对 429 退避（`src/document.js` 的 `MIN_INTERVAL_MS` / `RETRY_DELAY_MS`）。
 **别为了跑快把间隔调小**——那是别人的免费接口。
+
+⚠️ **整部经模式（分块 + 回喂上文 + 429 退避）不在 master 里**，它还躺在 PR #76。
+`src/document.js`、`docs/document-mode.md`、`eval/drift-check.mjs`、`eval/run-document.mjs`、
+`tests/document.test.mjs` 一个都没合进来，`index.html` 里也没有入口。
+那个分支已落后 master 18 个提交（界面、`src/ui.js`、`eval/` 全部大改过），
+**要用它得当成重做，不是 rebase**。这一页此前把它写得像已有功能，是错的。
 
 ## ⚠️ Node 的 fetch 默认不读代理环境变量
 
@@ -44,7 +49,9 @@ curl -sS -D - -o /dev/null -X POST https://dharmamitra.org/api-search/primary/ \
 ## ⚠️ `[hidden]` 会被 `display: grid/flex` 盖掉
 
 浏览器给 `[hidden]` 的默认 `display:none` 优先级低于任何带类名的 `display` 声明。
-`styles.css` 顶部有一条 `[hidden]{display:none!important}` 兜着，**别删**。
+`styles/base.css` 顶部有一条 `[hidden]{display:none!important}` 兜着，**别删**。
+（这行原来指的是 `styles.css`，那个文件**已不存在**——界面改版时拆成了 `styles/` 三份。
+是 `tests/docs-reference-real-files.test.mjs` 把这个失效指路揪出来的。）
 同理，放进 `.translation-area`（`1fr 90px 1fr` 栅格）的面板必须 `grid-column: 1/-1`，
 否则会被挤进中间那条 90px 的窄列。
 
@@ -102,15 +109,32 @@ curl -sS -D - -o /dev/null -X POST https://dharmamitra.org/api-search/primary/ \
 
 ## 验收怎么做
 
-`eval/` 下是整部经翻译的 A/B 验收：同一部经、同一引擎译风，**只改「回不回喂上文」一个变量**
-跑两遍再比。`eval/drift-check.mjs` **只出候选与数字，不下判断**，标 ⚠️ 的要人工看译文。
-结论与三个已知测量缺陷见 `eval/RESULTS.md`。
+`eval/` 下是译文质量的 A/B 验收设施。**脚本只出数据与差异，结论一律人工或盲评判官看**——
+机器判佛典术语对错本身就不可靠（`等持` 该译 concentration 还是 equanimity，正则和 BLEU 都判不了）。
 
-新加语料必须**独立核对**并把过程写进 `meta.json` 的 `verification`——
+现有两套，都在 `eval/RESULTS.md` 里有完整记录：
+
+| 脚本 | 问的问题 | 结论 |
+|---|---|---|
+| `eval/auto-metrics.mjs` | 六条保真规则里可机器判定的那几条，遵守了没有 | 两臂全 0→0，规则是保险不是改进 |
+| `eval/lexicon-onoff.mjs` → `judge-prep` → `judge-score` | 送不送术语库，译文会不会更好 | ON 9 : 12 OFF，p = 0.664，**没有正收益** |
+
+⚠️ **加指标之前先给指标做变异测试**：喂已知坏值，确认它真的会红。
+`auto-metrics` 第一版有三处探测器是摆设，全是喂坏值才发现的，读代码读不出来。
+`tests/auto-metrics.test.mjs` 现在盯着它们。
+
+⚠️ **别拿「括注查无出处」去比较术语库 ON/OFF**——那是循环论证，该指标拿术语库当参照物。
+
+（整部经翻译的 A/B（`eval/drift-check.mjs`、`eval/run-document.mjs`）**不在 master**，见上面关于 PR #76 的说明。）
+
+新加语料必须**独立核对**并把核对过程记下来（`eval/corpus/*.meta.json` 的 `verification` 字段，
+那套语料目录在 PR #76 里、**尚未合并**；现有 `eval/passages*.json` 由 `select-passages.mjs` 生成，
+选段判据写在脚本注释里）。
 核对要挑**独特句**，用「所以者何？」这类套语反查会 0 命中，那是取样问题不是数据问题。
 
 ## 上游资源速查
 
 - 接口与参数依据：<https://github.com/dharmamitra/dharmamitra-claude-code-agent>
 - 术语数据上游：<https://github.com/dharmamitra/dharmamitra-lexicon>（CC BY 4.0）
-- 详细笔记：`docs/mitra.md`、`docs/lexicon.md`、`docs/document-mode.md`、`NOTICE.md`
+- 详细笔记：`docs/mitra.md`、`docs/lexicon.md`、`docs/competitive-baseline.md`、`NOTICE.md`
+  （`docs/document-mode.md` 在 PR #76 里，未合并）
