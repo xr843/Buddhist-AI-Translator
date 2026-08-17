@@ -203,3 +203,59 @@ test('README documents translation result export', async () => {
     assert.match(readme, /导出|下载译文/);
     assert.match(readme, /export|download/i);
 });
+
+/*
+ * 页脚年份不许再写死。
+ *
+ * 2026-08-17 用户截图指出页脚还写着「© 2025」——没有任何测试发现它，
+ * 因为没有任何测试盯着它。硬编码的年份每年一月都会自己变成错的，
+ * 而它出现在每一页的最底部，是最容易被当成「站点没人管了」的信号。
+ *
+ * 现在的写法：HTML 里只写起始年当兜底，当前年由 src/main.js 用
+ * utils.copyrightYears 接上。这条钉住这个结构，不是钉某个具体年份
+ * ——钉年份的测试自己也会过期。
+ */
+test('the footer copyright year is rendered, not hardcoded', async () => {
+    const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+    const main = await readFile(new URL('../src/main.js', import.meta.url), 'utf8');
+
+    const footer = html.slice(html.indexOf('<footer'), html.indexOf('</footer>'));
+
+    assert.match(
+        footer,
+        /id="copyright-years"/,
+        'the footer needs a hook for the rendered year, otherwise it goes stale every January'
+    );
+    // 兜底值必须是起始年，不能是「今年」——否则 JS 挂掉时又变成一个会过期的死年份
+    assert.match(footer, /id="copyright-years">\s*2025\s*</);
+
+    assert.match(main, /copyrightYears\(/, 'main.js must render the year range');
+    assert.match(main, /new Date\(\)\.getFullYear\(\)/, 'the current year must come from the clock');
+});
+
+/*
+ * 页脚只许写页面上真做得到的事。
+ *
+ * 页脚曾经写「佛典翻译与**语料检索**由 Dharmamitra / MITRA 提供」，
+ * 但藏经溯源面板在 #80 就被移除了，界面上没有任何检索入口。
+ * src/mitra.js 的客户端和 Worker 的 /mitra/search 路由都还在，
+ * 所以代码搜索会让人以为功能健在——**用户点不到就是没有**。
+ *
+ * 这条是条件闸门：页脚可以提检索，前提是界面上真有入口。
+ * 哪天溯源功能做回来，这条自然放行；在那之前它挡着空头承诺。
+ */
+test('the footer does not advertise a corpus-search feature the UI has no entry point for', async () => {
+    const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+    const footer = html.slice(html.indexOf('<footer'), html.indexOf('</footer>'));
+    const body = html.slice(0, html.indexOf('<footer'));
+
+    const footerClaimsSearch = /语料检索|藏经检索|出处溯源|溯源/.test(footer.replace(/<!--[\s\S]*?-->/g, ''));
+    const uiHasSearchEntry = /id="provenance-btn"|id="provenance-panel"|data-action="provenance"/.test(body);
+
+    if (footerClaimsSearch && !uiHasSearchEntry) {
+        assert.fail(
+            'the footer advertises corpus search, but index.html has no provenance entry point — '
+            + 'either restore the UI or drop the claim'
+        );
+    }
+});

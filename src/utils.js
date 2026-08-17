@@ -101,3 +101,19 @@ export function showMessage(message, type = 'info') {
         }, 300);
     }, 3000);
 }
+
+/*
+ * 版权年份。硬编码一个年份必然会过期——2026-08-17 页脚上写的还是 2025。
+ * 所以只把**起始年**写进 HTML 当兜底，当前年由这里算出来接上。
+ *
+ * 惯例是「起始年–最近更新年」，只有两者相同时才写单个年份。
+ * 用短横线（en dash），不是连字符。
+ */
+export function copyrightYears(startYear, currentYear) {
+    const start = Number(startYear);
+    const current = Number(currentYear);
+    if (!Number.isFinite(start)) return '';
+    // 系统时钟不可信时（往前调过、或没设好）不要倒着写成 2026–2025
+    if (!Number.isFinite(current) || current <= start) return String(start);
+    return `${start}–${current}`;
+}
