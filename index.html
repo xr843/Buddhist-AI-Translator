@@ -383,15 +383,24 @@
 
     <footer class="footer-simple">
         <div class="container">
-            <p>&copy; 2025 佛教文本AI翻译器</p>
+            <!-- 起始年写死当兜底，当前年由 src/main.js 接上（见 utils.js 的 copyrightYears）。
+                 硬编码整个年份必然过期——这里曾经一直停在 2025。 -->
+            <p>
+                &copy; <span id="copyright-years">2025</span> 佛教文本AI翻译器
+                · <a href="https://github.com/xr843/Buddhist-AI-Translator" target="_blank" rel="noopener noreferrer">源码</a>
+            </p>
+            <!-- ⚠️ 只写页面上真做得到的事。这里曾经写「佛典翻译与语料检索由…提供」，
+                 但藏经溯源面板在 #80 就移除了，界面上没有任何检索入口——
+                 客户端与 Worker 路由还在，用户点不到。空头承诺按删处理。
+                 「分发」而不是「使用」：CC BY 的义务由分发触发，这份数据随本站一起发出去。 -->
             <p class="footer-credit">
-                佛典翻译与语料检索由
+                佛典翻译由
                 <a href="https://dharmamitra.org" target="_blank" rel="noopener noreferrer">Dharmamitra / MITRA</a>
-                （东北大学，Tohoku University）提供；术语对照数据派生自
+                （东北大学，Tohoku University）提供；本站随附的术语对照数据派生自
                 <a href="https://github.com/dharmamitra/dharmamitra-lexicon" target="_blank" rel="noopener noreferrer">dharmamitra-lexicon</a>
                 （© Dharmamitra project），<strong>经筛选与聚合改编</strong>，依
                 <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>
-                使用。改动详情见
+                分发。改动详情见
                 <a href="https://github.com/xr843/Buddhist-AI-Translator/blob/master/NOTICE.md" target="_blank" rel="noopener noreferrer">NOTICE</a>。
             </p>
         </div>

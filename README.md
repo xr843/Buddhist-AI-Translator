@@ -32,7 +32,6 @@
 | **佛典专用引擎** | 默认走 MITRA，梵／巴／汉／藏四种佛典语言无需密钥即可翻译 |
 | **多本合参** | 同一段落的多语种写本一起送入，得到一份权衡各本的译文，可指定侧重写本 |
 | **译风控制** | 文本类别 + 译法／术语呈现／语体／注释深度，五维组合成给模型的指令 |
-| **出处溯源** | 一键在藏经语料中检索原文，返回经名、`segmentnr` 与阅读室深链 |
 | **实证术语索引** | 8,610 条汉语术语 → 梵文原语／藏译，带出现次数与大正藏经号（数据资产，**默认不参与翻译**，见下） |
 | **18 种语言** | 梵文、巴利文、藏文、文言文、现代中文、英文等 |
 | **语音功能** | 语音输入 + 多语言朗读，支持分段高亮 |
@@ -113,7 +112,7 @@ npm run verify
 ```
 Frontend:      HTML5 + CSS3 + JavaScript ES6+（无框架、无构建）
 翻译引擎:      MITRA cat-translate（默认，免密钥）/ DeepSeek API（可选）
-语料检索:      MITRA primary search
+语料检索:      MITRA primary search（客户端与 Worker 路由保留，**界面暂无入口**）
 术语数据:      dharmamitra-lexicon (CC BY 4.0)
 Icons:         内联 SVG sprite（自绘，无第三方图标集依赖）
 Fonts:         Google Fonts (Noto Sans SC/Serif SC)
@@ -183,7 +182,6 @@ default — **no API key required**.
 | **Domain engine, no key** | MITRA translates Sanskrit, Pali, Classical Chinese and Tibetan out of the box |
 | **Multi-witness translation** | Feed several language witnesses of one passage; get a single synthesised translation, optionally weighted toward a base text |
 | **Style control** | Source category plus literalness / term rendering / register / gloss depth, compiled into the model instruction |
-| **Provenance lookup** | Search the canonical corpus for the source passage; get titles, segment IDs and reading-room deep links |
 | **Attested term index** | 8,610 Chinese terms mapped to their Sanskrit originals and Tibetan renderings, with occurrence counts and Taishō numbers. A data asset — **not fed into translation by default**; see below |
 | **18 Languages** | Sanskrit, Pali, Tibetan, Classical Chinese, Modern Chinese, English, etc. |
 | **Voice Support** | Speech input + multi-language text-to-speech with segment highlighting |
@@ -272,7 +270,7 @@ Buddhist-AI-Translator/
 | 用途 | 来源 | 许可 | 声明出处 |
 |---|---|---|---|
 | 佛典翻译（默认引擎） | MITRA `cat-translate` 公开接口 | ⚠️ 未找到使用条款（八个常见路径均 404，非对方确认不存在）；官方文档自述 “free-for-access” | [MITRA Translate 文档](https://dharmamitra.github.io/dharmamitra-guides/mitra_tools/translate/) |
-| 藏经语料检索与深链 | MITRA `primary` 公开接口 | 同上 | 同上 |
+| 藏经语料检索与深链（⚠️ 界面暂无入口，中转路由保留） | MITRA `primary` 公开接口 | 同上 | 同上 |
 | 汉语术语 → 梵／藏对照 | [dharmamitra-lexicon](https://github.com/dharmamitra/dharmamitra-lexicon) | **[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)**，**本项目已改编** | 上游 README `## License` 一节（⚠️ 该仓库无 LICENSE 文件） |
 
 术语对照数据是**派生品而非原样转发**：只取两个方向、按词聚合、两道过滤、每词只留前几个原语，
