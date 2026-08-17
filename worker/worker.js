@@ -171,15 +171,6 @@ async function handleTranslate(request, env, origin) {
     // 只对通过基础校验、即将调用上游的请求消耗速率限制配额。
     const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
     const rateLimitResult = await checkRateLimit(env, clientIP);
-    if (rateLimitResult.unavailable) {
-        return jsonResponse(
-            { error: '速率限制服务暂时不可用，请稍后重试' },
-            origin,
-            env,
-            503,
-            { 'Retry-After': String(rateLimitResult.retryAfter) }
-        );
-    }
     if (!rateLimitResult.allowed) {
         return jsonResponse(
             { error: `请求过于频繁，请 ${rateLimitResult.retryAfter} 秒后重试` },
@@ -433,15 +424,6 @@ async function enforceRateLimit(request, env, origin) {
     const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
     const rateLimitResult = await checkRateLimit(env, clientIP);
 
-    if (rateLimitResult.unavailable) {
-        return jsonResponse(
-            { error: '速率限制服务暂时不可用，请稍后重试' },
-            origin,
-            env,
-            503,
-            { 'Retry-After': String(rateLimitResult.retryAfter) }
-        );
-    }
     if (!rateLimitResult.allowed) {
         return jsonResponse(
             { error: `请求过于频繁，请 ${rateLimitResult.retryAfter} 秒后重试` },
@@ -595,7 +577,24 @@ async function checkRateLimit(env, clientIP) {
         await env.RATE_LIMIT_KV.put(key, JSON.stringify(requests), { expirationTtl: 120 });
         return { allowed: true };
     } catch {
-        return { allowed: false, unavailable: true, retryAfter: 60 };
+        /*
+         * 计数器坏了就放行，不要把整站拖下水。
+         *
+         * 这里原先是 fail-closed（返回 allowed:false）。看似稳妥，实则搞反了：
+         *
+         * KV 免费额度是**每天 1,000 次写入**，而这个限流器每次通过的请求写一次。
+         * 也就是说单个用户满速用 33 分钟（30 次/分钟 × 33）就能耗尽全天配额，
+         * 此后每个请求都落进这个 catch —— fail-closed 会让**所有正常用户**
+         * 收到 503，直到 UTC 零点。攻击者因此得到一个极廉价的拒绝服务手段：
+         * 花 1,000 次请求换全站当天下线。fail-closed 在这里是帮了攻击者。
+         *
+         * 放行的代价是那段时间没有限流保护，但被保护的上游自己有
+         * （MITRA 约 10 次/分钟）。「限流暂时失效」远好过「站点整天不可用」。
+         *
+         * ⚠️ 这不能替代把容量提上去——那需要换掉 KV（它没有原子自增，
+         * 任何基于它的计数都是每请求一次写入，分桶也省不掉）。见 README。
+         */
+        return { allowed: true, degraded: true };
     }
 }
 

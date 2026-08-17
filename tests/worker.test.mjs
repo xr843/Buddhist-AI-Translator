@@ -530,13 +530,31 @@ test('rate-limited translate responses include Retry-After', async (t) => {
     assert.match((await json(response)).error, /30 秒后重试/);
 });
 
-test('bound rate limit KV read failures fail closed without calling upstream', async (t) => {
+/*
+ * 计数器坏了要放行，不能把整站拖下水。
+ *
+ * 这两条以前钉的是 fail-closed（KV 出错就 503）。看似稳妥，实则搞反了：
+ * KV 免费额度是每天 1,000 次写入，而限流器每次通过的请求写一次——
+ * 单个用户满速用 33 分钟就能耗尽全天配额，此后每个请求都落进 catch。
+ * fail-closed 会让所有正常用户收到 503 直到 UTC 零点，等于给攻击者
+ * 一个极廉价的拒绝服务手段：1,000 次请求换全站当天下线。
+ *
+ * 放行的代价是那段时间没有限流，但上游自己有（MITRA 约 10 次/分钟）。
+ * 「限流暂时失效」远好过「站点整天不可用」。
+ */
+test('a rate-limit KV read failure lets the request through instead of 503ing the site', async (t) => {
     const originalFetch = globalThis.fetch;
     let calls = 0;
 
     globalThis.fetch = async () => {
         calls += 1;
-        throw new Error('DeepSeek should not be called when rate-limit KV fails');
+        return {
+            ok: true,
+            status: 200,
+            async json() {
+                return { choices: [{ message: { content: 'All conditioned things are impermanent.' } }] };
+            }
+        };
     };
     t.after(() => {
         globalThis.fetch = originalFetch;
@@ -544,64 +562,52 @@ test('bound rate limit KV read failures fail closed without calling upstream', a
 
     const response = await worker.fetch(request('/translate', {
         method: 'POST',
-        body: {
-            text: 'sabbe sankhara anicca',
-            sourceLang: 'pi',
-            targetLang: 'en'
-        }
+        body: { text: 'sabbe sankhara anicca', sourceLang: 'pi', targetLang: 'en' }
     }), {
         DEEPSEEK_API_KEY: 'test-key',
         RATE_LIMIT_KV: {
-            async get() {
-                throw new Error('KV unavailable');
-            },
-            async put() {
-                throw new Error('put should not be called after get failure');
-            }
+            async get() { throw new Error('KV unavailable'); },
+            async put() { throw new Error('put should not be reached after get failure'); }
         }
     });
 
-    assert.equal(response.status, 503);
-    assert.equal(response.headers.get('Retry-After'), '60');
-    assert.equal(calls, 0);
-    assert.match((await json(response)).error, /速率限制服务暂时不可用/);
+    assert.equal(response.status, 200, 'a broken counter must not take the whole site down');
+    assert.equal(calls, 1, 'the request should reach upstream');
+    assert.doesNotMatch(JSON.stringify(await json(response)), /速率限制服务暂时不可用/);
 });
 
-test('bound rate limit KV write failures fail closed without calling upstream', async (t) => {
+test('a rate-limit KV write failure — the daily-quota case — also lets the request through', async (t) => {
     const originalFetch = globalThis.fetch;
     let calls = 0;
 
     globalThis.fetch = async () => {
         calls += 1;
-        throw new Error('DeepSeek should not be called when rate-limit KV fails');
+        return {
+            ok: true,
+            status: 200,
+            async json() {
+                return { choices: [{ message: { content: 'All conditioned things are impermanent.' } }] };
+            }
+        };
     };
     t.after(() => {
         globalThis.fetch = originalFetch;
     });
 
+    // 每日 1,000 次写入用尽时，正是 put 抛错而 get 仍正常——这条模拟的就是那一刻
     const response = await worker.fetch(request('/translate', {
         method: 'POST',
-        body: {
-            text: 'sabbe sankhara anicca',
-            sourceLang: 'pi',
-            targetLang: 'en'
-        }
+        body: { text: 'sabbe sankhara anicca', sourceLang: 'pi', targetLang: 'en' }
     }), {
         DEEPSEEK_API_KEY: 'test-key',
         RATE_LIMIT_KV: {
-            async get() {
-                return [];
-            },
-            async put() {
-                throw new Error('KV write unavailable');
-            }
+            async get() { return []; },
+            async put() { throw new Error('KV write unavailable'); }
         }
     });
 
-    assert.equal(response.status, 503);
-    assert.equal(response.headers.get('Retry-After'), '60');
-    assert.equal(calls, 0);
-    assert.match((await json(response)).error, /速率限制服务暂时不可用/);
+    assert.equal(response.status, 200, 'exhausting the KV write quota must not close the site');
+    assert.equal(calls, 1);
 });
 
 test('malformed rate limit KV entries are reset without disabling rate limiting', async (t) => {
