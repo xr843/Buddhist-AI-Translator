@@ -1,0 +1,21 @@
+[
+ {"n": 1, "verdict": "B", "reason": "A inserts garbled gloss \"said (ah)\"; B renders 曾不 as \"never\" precisely"},
+ {"n": 2, "verdict": "TIE", "reason": "Both complete and accurate; only phrasing and gloss style differ"},
+ {"n": 3, "verdict": "TIE", "reason": "Both complete; minor gloss trade-offs (sāsrava vs dūraṃgamā) cancel out"},
+ {"n": 4, "verdict": "B", "reason": "A reverses 不捨煩惱 into \"they do abandon the afflictions\""},
+ {"n": 5, "verdict": "A", "reason": "B drops 異熟定 and muddles 無永離染義 into \"no meaning\""},
+ {"n": 6, "verdict": "TIE", "reason": "Both render every clause; differences are wording and Sanskrit glosses only"},
+ {"n": 7, "verdict": "B", "reason": "A drops 善士, adds \"he has undertaken\", merges 能引義利 into skillful means"},
+ {"n": 8, "verdict": "A", "reason": "B truncates: types four and five entirely missing"},
+ {"n": 9, "verdict": "TIE", "reason": "Both complete, all six pairs and seven path factors present"},
+ {"n": 10, "verdict": "TIE", "reason": "All five stages rendered in both; only gloss precision differs"},
+ {"n": 11, "verdict": "B", "reason": "A glosses 妙 as anuttara, conflating it with 無上 later"},
+ {"n": 12, "verdict": "A", "reason": "B glosses both 有罪 and 無罪 as anavadya, contradicting itself"},
+ {"n": 13, "verdict": "TIE", "reason": "Every negation and item present in both; wording alone differs"},
+ {"n": 14, "verdict": "A", "reason": "B renders 佛 as \"Blessed One\"; A keeps speaker and 憂惱 closer"},
+ {"n": 15, "verdict": "TIE", "reason": "Both complete; 聖戒 and 不壞淨 renderings trade minor advantages"},
+ {"n": 16, "verdict": "TIE", "reason": "Both reproduce the whole negation list accurately, including four foundations"},
+ {"n": 17, "verdict": "TIE", "reason": "Identical content; both share the same 是我 slip, nothing separates them"},
+ {"n": 18, "verdict": "B", "reason": "A truncates: the six pāramitā sentences and closing line missing"},
+ {"n": 19, "verdict": "A", "reason": "B says \"six foundations of mindfulness\" for 四念處"}
+]

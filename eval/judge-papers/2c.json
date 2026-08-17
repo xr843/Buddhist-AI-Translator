@@ -1,0 +1,21 @@
+[
+ {"n": 1, "verdict": "TIE", "reason": "Both complete and accurate; only gloss blemishes differ, nothing decisive"},
+ {"n": 2, "verdict": "TIE", "reason": "Content identical; only paragraphing and gloss detail differ"},
+ {"n": 3, "verdict": "TIE", "reason": "Both complete; A's sāsrava gloss better, B's 非所行 rendering better"},
+ {"n": 4, "verdict": "B", "reason": "A reverses 不捨煩惱, saying the bodhisattva does abandon afflictions"},
+ {"n": 5, "verdict": "A", "reason": "B drops 異熟定 condition and garbles 無永離染義 into 'no meaning'"},
+ {"n": 6, "verdict": "TIE", "reason": "Both fully complete; differences are Sanskrit gloss choices only"},
+ {"n": 7, "verdict": "B", "reason": "A drops 善士 and 一切欲, and invents 'he has undertaken'"},
+ {"n": 8, "verdict": "A", "reason": "B truncated mid-list: third item's content, fourth and fifth missing"},
+ {"n": 9, "verdict": "B", "reason": "A renders 有分別 as 'conceptual proliferation', conflicting with its own vikalpa gloss"},
+ {"n": 10, "verdict": "TIE", "reason": "Same content throughout; only stage-name glosses differ slightly"},
+ {"n": 11, "verdict": "B", "reason": "A glosses 妙 as anuttara, conflating it with 無上; mistranslates 習為果"},
+ {"n": 12, "verdict": "A", "reason": "B glosses both 有罪 and 無罪 identically as anavadya, collapsing the contrast"},
+ {"n": 13, "verdict": "TIE", "reason": "All negation series complete in both; wording differences only"},
+ {"n": 14, "verdict": "A", "reason": "B substitutes epithet 'Blessed One' where Chinese says 佛"},
+ {"n": 15, "verdict": "TIE", "reason": "Both complete; only 聖戒 gloss (śīla vs śikṣāpada) differs"},
+ {"n": 16, "verdict": "TIE", "reason": "Full negation list present and correct in both versions"},
+ {"n": 17, "verdict": "TIE", "reason": "Both complete and share the same minor 是我 rendering"},
+ {"n": 18, "verdict": "B", "reason": "A truncated: pāramitā enumeration and closing sentence omitted"},
+ {"n": 19, "verdict": "A", "reason": "B says 'six foundations of mindfulness' for 四念處"}
+]
