@@ -139,14 +139,18 @@ test('joinWitnessesForPrompt labels each witness when there is more than one', (
     assert.match(joined, /如是我聞/);
 });
 
-test('translateText routes a canon passage through MITRA with style and glossary attached', async () => {
+test('translateText routes a canon passage through MITRA with style, and injects the glossary when explicitly asked', async () => {
     const calls = stubFetch(() => mitraResponse('Thus have I heard.'));
 
+    // useLexicon 现在默认关（两轮盲评测不出正收益，见 translateText 的注释）。
+    // 这条测试钉的是**显式开启后注入链路仍然完好**，因为 eval/ 下的 A/B 依赖它，
+    // 将来若有证据要改回默认开，也得靠这条保证代码没烂掉。
     const outcome = await translateText({
         witnesses: { 'zh-classical': '如是我聞，涅槃者' },
         sourceLang: 'zh-classical',
         targetLang: 'en',
-        style: { literalness: 'literal' }
+        style: { literalness: 'literal' },
+        useLexicon: true
     });
 
     assert.equal(outcome.engine, ENGINES.MITRA);
@@ -161,6 +165,46 @@ test('translateText routes a canon passage through MITRA with style and glossary
     // 命中的术语必须以实证对照进 context
     assert.match(calls[0].body.context, /涅槃 = nirvāṇa/);
     assert.equal(outcome.lexiconTerms, 1);
+});
+
+/*
+ * 这条是把「不注入术语库」钉成契约的那一条。
+ *
+ * 结论来自两轮盲评（共 55 段，6 与 12 位互不通气的判官，对照题守着）：
+ * 术语库在翻译链路上测不出正收益，而它带来的括注错误可以定位到具体条目
+ * （薩婆若 / 所知障 / 有漏 的首选梵文形式都是错的）。详见 translateText 的注释
+ * 与 eval/RESULTS.md。
+ *
+ * 没有这条测试，任何人（包括我）把默认翻回 true 都不会有东西变红，
+ * 那两轮实验就白做了。所以它同时钉三件事：不发词表请求、context 为空、
+ * lexiconTerms 为 0 —— 只钉最后一个不够，因为 context 里塞了东西而
+ * 计数算错的情况也会通过。
+ */
+test('translateText does not fetch or inject the glossary by default', async () => {
+    resetLexicon();
+    API_CONFIG.proxyURL = PROXY;
+    API_CONFIG.apiKey = '';
+    const calls = stubFetch(url => {
+        if (url.includes('lexicon.json')) {
+            throw new Error('默认路径不该去取术语库');
+        }
+        return mitraResponse('Thus have I heard.');
+    });
+
+    const outcome = await translateText({
+        witnesses: { 'zh-classical': '如是我聞，涅槃者' },   // 涅槃 在 fixture 里，开着必然命中
+        sourceLang: 'zh-classical',
+        targetLang: 'en'
+    });
+
+    assert.equal(outcome.text, 'Thus have I heard.');
+    assert.equal(
+        calls.filter(call => String(call.url).includes('lexicon.json')).length,
+        0,
+        '默认不该发出术语库请求——发了就等于白付流量却没有收益'
+    );
+    assert.equal(calls.at(-1).body.context, '', 'context 必须是空的');
+    assert.equal(outcome.lexiconTerms, 0);
 });
 
 test('translateText passes focus through in multi-witness mode', async () => {
@@ -287,7 +331,8 @@ test('translateText sends the glossary and style into the DeepSeek prompt too', 
         witnesses: { zh: '涅槃与菩萨' },
         sourceLang: 'zh',
         targetLang: 'zh-classical',
-        style: { register: 'liturgical' }
+        style: { register: 'liturgical' },
+        useLexicon: true       // 默认关，这条测的是显式开启时 DeepSeek prompt 也拼得对
     });
 
     assert.equal(outcome.engine, ENGINES.DEEPSEEK);
@@ -305,10 +350,13 @@ test('a broken lexicon must not block the translation', async () => {
         return mitraResponse('Thus have I heard.');
     });
 
+    // 必须显式 useLexicon: true —— 默认关的话根本不会去取词表，
+    // 这条测试就会在「什么都没发生」的情况下变成绿色摆设。
     const outcome = await translateText({
         witnesses: { 'zh-classical': '如是我聞' },
         sourceLang: 'zh-classical',
-        targetLang: 'en'
+        targetLang: 'en',
+        useLexicon: true
     });
 
     assert.equal(outcome.text, 'Thus have I heard.');
