@@ -34,8 +34,11 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 
 // 两臂的叫法随卷源而变：blind-pairs 是「改前/改后」，lexicon-onoff 是「术语库 OFF/ON」。
 // leftIsNew 恒定表示「左边是被测的那一臂」。
-const ARM_B = process.env.ARM_B || ARM_B;
-const ARM_A = process.env.ARM_A || ARM_A;
+// ⚠️ 默认值必须写成字面量。这里曾经是 `process.env.ARM_B || ARM_B` —— 自引用，
+// 而且只在**不设环境变量**时才炸（设了就被 || 短路跳过）。我每次手跑都设了，
+// 一路没露，是 tests/auto-metrics.test.mjs 里的 import 把它逮出来的。
+const ARM_B = process.env.ARM_B || '改后';
+const ARM_A = process.env.ARM_A || '改前';
 
 /* ── 规则 6：附注与解释 ───────────────────────────────────────── */
 
