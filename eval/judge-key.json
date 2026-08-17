@@ -1,0 +1,139 @@
+[
+ {
+  "n": 1,
+  "type": "real",
+  "id": 12,
+  "title": "雜阿含經",
+  "firstIsNew": false
+ },
+ {
+  "n": 2,
+  "type": "real",
+  "id": 2,
+  "title": "大智度論",
+  "firstIsNew": false
+ },
+ {
+  "n": 3,
+  "type": "real",
+  "id": 5,
+  "title": "瑜伽師地論",
+  "firstIsNew": false
+ },
+ {
+  "n": 4,
+  "type": "control",
+  "id": "C3",
+  "title": "瑜伽師地論",
+  "why": "去掉否定，命题反转",
+  "intactFirst": true
+ },
+ {
+  "n": 5,
+  "type": "real",
+  "id": 13,
+  "title": "阿毘達磨俱舍論",
+  "firstIsNew": true
+ },
+ {
+  "n": 6,
+  "type": "real",
+  "id": 7,
+  "title": "瑜伽師地論",
+  "firstIsNew": false
+ },
+ {
+  "n": 7,
+  "type": "real",
+  "id": 6,
+  "title": "瑜伽師地論",
+  "firstIsNew": true
+ },
+ {
+  "n": 8,
+  "type": "control",
+  "id": "C4",
+  "title": "瑜伽師地論",
+  "why": "砍掉末尾约三分之一",
+  "intactFirst": false
+ },
+ {
+  "n": 9,
+  "type": "real",
+  "id": 10,
+  "title": "雜阿含經",
+  "firstIsNew": true
+ },
+ {
+  "n": 10,
+  "type": "real",
+  "id": 14,
+  "title": "成唯識論",
+  "firstIsNew": false
+ },
+ {
+  "n": 11,
+  "type": "real",
+  "id": 15,
+  "title": "阿毘達磨俱舍論",
+  "firstIsNew": false
+ },
+ {
+  "n": 12,
+  "type": "real",
+  "id": 3,
+  "title": "大智度論",
+  "firstIsNew": true
+ },
+ {
+  "n": 13,
+  "type": "real",
+  "id": 8,
+  "title": "瑜伽師地論",
+  "firstIsNew": false
+ },
+ {
+  "n": 14,
+  "type": "real",
+  "id": 1,
+  "title": "大智度論",
+  "firstIsNew": false
+ },
+ {
+  "n": 15,
+  "type": "real",
+  "id": 11,
+  "title": "雜阿含經",
+  "firstIsNew": true
+ },
+ {
+  "n": 16,
+  "type": "real",
+  "id": 4,
+  "title": "大智度論",
+  "firstIsNew": true
+ },
+ {
+  "n": 17,
+  "type": "real",
+  "id": 9,
+  "title": "雜阿含經",
+  "firstIsNew": true
+ },
+ {
+  "n": 18,
+  "type": "control",
+  "id": "C1",
+  "title": "大智度論",
+  "why": "砍掉末尾约三分之一",
+  "intactFirst": true
+ },
+ {
+  "n": 19,
+  "type": "control",
+  "id": "C2",
+  "title": "大智度論",
+  "why": "数目改错",
+  "intactFirst": false
+ }
+]

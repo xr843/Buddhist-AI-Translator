@@ -1,0 +1,21 @@
+[
+ {"n": 1, "verdict": "A", "reason": "B carries stray junk glosses ('(ah)', duplicated brāhmaṇa); A renders 正法 as saddharma"},
+ {"n": 2, "verdict": "TIE", "reason": "Both complete and accurate; differ only in phrasing of 以是因緣故 and glosses"},
+ {"n": 3, "verdict": "B", "reason": "B's technical glosses correct (sāsrava for 有漏, asaṃjñi, ālambana); A's āsrava wrong"},
+ {"n": 4, "verdict": "A", "reason": "B reverses 不捨煩惱 into 'they do abandon the afflictions'"},
+ {"n": 5, "verdict": "B", "reason": "A misreads 由田勝者 as persons and garbles 異熟定位不定 (ripening certain, timing uncertain)"},
+ {"n": 6, "verdict": "TIE", "reason": "Content identical; A better on 無生, B better on Sanskrit glosses — offsetting"},
+ {"n": 7, "verdict": "B", "reason": "A distorts 欲加行 into 'application to all desires (sarva-kāma)'"},
+ {"n": 8, "verdict": "B", "reason": "A truncated mid-list: third item incomplete, fourth and fifth exertions missing"},
+ {"n": 9, "verdict": "A", "reason": "B mistranslates 分別 as 'conceptual proliferation' (prapañca); rest equal"},
+ {"n": 10, "verdict": "TIE", "reason": "Identical content; A mislabels 位 as bhūmi, B mis-glosses 通達 as pratipatti"},
+ {"n": 11, "verdict": "A", "reason": "B glosses 妙 as anuttara, conflating it with 無上 later in same passage"},
+ {"n": 12, "verdict": "B", "reason": "A glosses 有罪 as anavadya (faultless), same gloss for both opposed terms"},
+ {"n": 13, "verdict": "A", "reason": "B glosses 無性 as svabhāva, the opposite term; A has niḥsvabhāva"},
+ {"n": 14, "verdict": "B", "reason": "A changes speaker of 佛告 to 'The Blessed One'; otherwise equal"},
+ {"n": 15, "verdict": "B", "reason": "A glosses 聖戒 as śikṣāpada; B's śīla is correct"},
+ {"n": 16, "verdict": "TIE", "reason": "Both render every negated item and numbered set correctly and completely"},
+ {"n": 17, "verdict": "TIE", "reason": "Substantively identical; minor offsetting choices (brāhmaṇa/'priest', ceto-vimukti)"},
+ {"n": 18, "verdict": "A", "reason": "B truncated: omits the six pāramitās and closing 具足諸波羅蜜 sentence"},
+ {"n": 19, "verdict": "B", "reason": "A says 'six foundations of mindfulness'; 四念處 is four"}
+]

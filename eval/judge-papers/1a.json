@@ -1,0 +1,21 @@
+[
+  {"n": 1, "verdict": "TIE", "reason": "Both complete and accurate; only gloss artifacts and epithet phrasing differ"},
+  {"n": 2, "verdict": "TIE", "reason": "Both complete; differ only in glossing of 因緣 and 十八不共法"},
+  {"n": 3, "verdict": "TIE", "reason": "Both complete and correct; differ only in Sanskrit gloss choices"},
+  {"n": 4, "verdict": "A", "reason": "B reverses 不捨煩惱 to 'they do abandon the afflictions'"},
+  {"n": 5, "verdict": "B", "reason": "B renders 異熟定位不定 and 無永離染義 correctly; A garbles both"},
+  {"n": 6, "verdict": "TIE", "reason": "Both complete and accurate; only Sanskrit glosses differ"},
+  {"n": 7, "verdict": "B", "reason": "A misreads 欲加行 as 'application to all desires (sarva-kāma)'"},
+  {"n": 8, "verdict": "B", "reason": "A truncates mid-list; fourth and fifth exertions entirely missing"},
+  {"n": 9, "verdict": "A", "reason": "B mistranslates 分別 as 'conceptual proliferation'; otherwise equal"},
+  {"n": 10, "verdict": "TIE", "reason": "Both complete; each has one imprecise stage-name gloss"},
+  {"n": 11, "verdict": "A", "reason": "B glosses 妙 as anuttara, colliding with 無上; 習為果 also weaker"},
+  {"n": 12, "verdict": "B", "reason": "A glosses 有罪 as anavadya, collapsing faulty and faultless"},
+  {"n": 13, "verdict": "TIE", "reason": "Both complete and accurate; only phrasing of negation series differs"},
+  {"n": 14, "verdict": "B", "reason": "A substitutes 'Blessed One' for 佛; content otherwise equal"},
+  {"n": 15, "verdict": "TIE", "reason": "Both complete; 聖戒 and 不壞淨 glosses trade minor imprecisions"},
+  {"n": 16, "verdict": "TIE", "reason": "Same content, both complete; only 'believe' versus 'faith' differs"},
+  {"n": 17, "verdict": "TIE", "reason": "Both complete; both share the same 是我 rendering slip"},
+  {"n": 18, "verdict": "A", "reason": "B truncates, omitting the six perfections and closing sentence"},
+  {"n": 19, "verdict": "B", "reason": "A says 'six foundations of mindfulness' for 四念處"}
+]

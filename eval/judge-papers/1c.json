@@ -1,0 +1,21 @@
+[
+ {"n": 1, "verdict": "A", "reason": "B inserts stray \"(ah)\" gloss; A renders 正法 as saddharma"},
+ {"n": 2, "verdict": "TIE", "reason": "Both complete and accurate; only gloss wording differs"},
+ {"n": 3, "verdict": "TIE", "reason": "Both complete; differ only in minor Sanskrit gloss precision"},
+ {"n": 4, "verdict": "A", "reason": "B reverses 不捨煩惱 to \"they do abandon the afflictions\""},
+ {"n": 5, "verdict": "B", "reason": "A misreads 或...或 disjunction, 異熟定位不定, and 無永離染義"},
+ {"n": 6, "verdict": "TIE", "reason": "Both render every clause; differences are gloss choice only"},
+ {"n": 7, "verdict": "B", "reason": "A mistranslates 欲加行 as \"application to all desires (sarva-kāma)\""},
+ {"n": 8, "verdict": "B", "reason": "A truncates mid-third item; fourth and fifth exertions missing"},
+ {"n": 9, "verdict": "A", "reason": "B renders 分別 as \"conceptual proliferation\" (prapañca), not discrimination"},
+ {"n": 10, "verdict": "TIE", "reason": "Substantively identical; only stage-name glosses differ"},
+ {"n": 11, "verdict": "A", "reason": "B glosses 妙 as anuttara, conflating it with 無上"},
+ {"n": 12, "verdict": "B", "reason": "A glosses both 有罪 and 無罪 as anavadya, erasing opposition"},
+ {"n": 13, "verdict": "TIE", "reason": "All negations and clauses present in both; glosses differ trivially"},
+ {"n": 14, "verdict": "B", "reason": "A renders speaker 佛 as \"Blessed One\"; B keeps \"Buddha\""},
+ {"n": 15, "verdict": "TIE", "reason": "Both complete; 聖戒 gloss śikṣāpada vs śīla is minor"},
+ {"n": 16, "verdict": "TIE", "reason": "All twelve negated items present in both, equally accurate"},
+ {"n": 17, "verdict": "TIE", "reason": "Both complete and equivalent; only transliteration forms differ"},
+ {"n": 18, "verdict": "A", "reason": "B truncates, dropping the six perfections and closing sentence"},
+ {"n": 19, "verdict": "B", "reason": "A says \"six foundations of mindfulness\" for 四念處"}
+]
