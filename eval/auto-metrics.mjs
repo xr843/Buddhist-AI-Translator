@@ -24,12 +24,18 @@
  * 若某一臂系统性更长，第二层的胜负就要打折看。
  *
  * 用法：node eval/auto-metrics.mjs
+ *      PAIRS=eval/lexicon-onoff-pairs.json node eval/auto-metrics.mjs
  */
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+// 两臂的叫法随卷源而变：blind-pairs 是「改前/改后」，lexicon-onoff 是「术语库 OFF/ON」。
+// leftIsNew 恒定表示「左边是被测的那一臂」。
+const ARM_B = process.env.ARM_B || ARM_B;
+const ARM_A = process.env.ARM_A || ARM_A;
 
 /* ── 规则 6：附注与解释 ───────────────────────────────────────── */
 
@@ -200,6 +206,12 @@ function missingStock(chinese, english) {
  *    查不到完全可能是正确却没被收录的词。所以这里只报**候选清单**，
  *    真正有意义的是**两臂的条数差**——同样的词表、同样的段落，
  *    一臂的无出处括注明显更多，才说明问题。
+ *
+ * ⚠️⚠️ **拿它比较「术语库 ON vs OFF」是循环论证，数字一律作废。**
+ *    这个指标用术语库当参照物，而 ON 臂正是被喂了术语库的那一臂——
+ *    它当然对得上。实测 lexicon-onoff 卷源上 OFF 75 → ON 12，
+ *    看着像 ON 大胜，其实只是「被喂了词表的人默写词表更准」。
+ *    该指标只在**两臂用同一份 context 来源**时才有意义（如 blind-pairs）。
  */
 const INDIC = /[āīūṛṝḷṅñṇṭḍśṣṃḥ]/;
 
@@ -254,7 +266,9 @@ function measure(chinese, english, attested) {
 }
 
 async function main() {
-    const pairs = JSON.parse(await readFile(path.join(repoRoot, 'eval/blind-pairs.json'), 'utf8'));
+    const pairsFile = process.env.PAIRS || 'eval/blind-pairs.json';
+    const pairs = JSON.parse(await readFile(path.resolve(repoRoot, pairsFile), 'utf8'));
+    console.log(`卷源：${pairsFile}（${pairs.length} 对）\n`);
     const lexicon = JSON.parse(await readFile(path.join(repoRoot, 'src/data/lexicon.json'), 'utf8'));
     const attested = buildAttested(lexicon);
 
@@ -289,7 +303,7 @@ async function main() {
     }
 
     const line = '─'.repeat(74);
-    console.log('规则遵守度（改前 → 改后；数字越小越好）');
+    console.log(`规则遵守度（${ARM_A} → ${ARM_B}；数字越小越好）`);
     console.log(line);
     console.log('条目  经                    附注违规      括号塞句      数目漏译      固定语丢失');
     for (const { pair, before, after } of rows) {
@@ -306,7 +320,7 @@ async function main() {
         );
     }
     console.log(line);
-    console.log(`合计  改前 → 改后`);
+    console.log(`合计  ${ARM_A} → ${ARM_B}`);
     console.log(`  规则6 附注/解释违规      ${totals.before.note} → ${totals.after.note}`);
     console.log(`  规则6 括号内塞进整句    ${totals.before.paren} → ${totals.after.paren}`);
     console.log(`  规则3 数目漏译          ${totals.before.numerals} → ${totals.after.numerals}  （共 ${numeralOpportunities} 处该译的数目）`);
@@ -315,7 +329,7 @@ async function main() {
     console.log(`        其中术语库查无出处  ${totals.before.unattested} → ${totals.after.unattested}  ⚠️ 近似量，见文件顶部说明`);
     console.log(line);
     const ratio = totals.after.chars / totals.before.chars;
-    console.log(`长度比（混淆变量）：改后 / 改前 = ${ratio.toFixed(3)}`);
+    console.log(`长度比（混淆变量）：${ARM_B} / ${ARM_A} = ${ratio.toFixed(3)}`);
     console.log(
         Math.abs(ratio - 1) < 0.05
             ? '  两臂长度相当，第二层的判断不易被「偏爱更长答案」污染。'
@@ -325,7 +339,7 @@ async function main() {
     // 明细：只打违规的，方便逐条核
     const detail = [];
     for (const { pair, before, after } of rows) {
-        for (const [arm, m] of [['改前', before], ['改后', after]]) {
+        for (const [arm, m] of [[ARM_A, before], [ARM_B, after]]) {
             for (const hit of m.note) detail.push(`  #${pair.id} ${arm} 附注：${hit}`);
             for (const hit of m.parenSentence) detail.push(`  #${pair.id} ${arm} 括号塞句：(${hit})`);
             for (const hit of m.numeralsMissing) detail.push(`  #${pair.id} ${arm} 漏数目：${hit}`);

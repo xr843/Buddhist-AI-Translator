@@ -21,7 +21,13 @@
  * 4. **符号检验**。给出 p 值。15 题的样本很小，
  *    9:6 这种比分和抛硬币没区别，必须让数字自己说出来。
  *
- * 用法：node eval/judge-score.mjs
+ * 用法：
+ *   node eval/judge-score.mjs                      # 默认：blind-pairs 那一轮
+ *   SETS='lex-h1-|eval/lex-h1-key.json,lex-h2-|eval/lex-h2-key.json' \
+ *     ARM_B=术语库ON ARM_A=术语库OFF node eval/judge-score.mjs
+ *
+ * SETS 是「考场目录前缀|答案文件」的逗号列表。分成多卷是因为一卷 40 题太长，
+ * 判官在长卷末尾会敷衍；两个半卷各 24 题，合并统计。
  */
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -31,10 +37,21 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 const scratch = process.env.EXAM_DIR
     || '/tmp/claude-1000/-home-lqsxi-projects-Buddhist-AI-Translator/a0473c0b-68eb-4ccc-b0b8-060594621c5c/scratchpad';
 
-const PAPERS = [
+const SUFFIXES = [
     { id: '1a', order: 1 }, { id: '1b', order: 1 }, { id: '1c', order: 1 },
     { id: '2a', order: 2 }, { id: '2b', order: 2 }, { id: '2c', order: 2 }
 ];
+
+// 两臂的叫法随卷源而变。leftIsNew / firstIsNew 恒定表示「第一个是被测的那一臂」。
+const ARM_B = process.env.ARM_B || '改后';
+const ARM_A = process.env.ARM_A || '改前';
+
+const SETS = (process.env.SETS || 'exam-|eval/judge-key.json')
+    .split(',')
+    .map(entry => {
+        const [dirPrefix, keyFile] = entry.split('|');
+        return { dirPrefix, keyFile };
+    });
 
 /** order1: A=first, B=second。order2 全部对调。 */
 function resolveArm(verdict, order, firstIsNew) {
@@ -71,21 +88,29 @@ function majority(arms) {
 }
 
 async function main() {
-    const key = JSON.parse(await readFile(path.join(repoRoot, 'eval/judge-key.json'), 'utf8'));
-    const byNumber = new Map(key.map(entry => [entry.n, entry]));
-
-    const papers = [];
-    for (const paper of PAPERS) {
-        const file = path.join(scratch, `exam-${paper.id}`, 'verdicts.json');
-        let verdicts;
-        try {
-            verdicts = JSON.parse(await readFile(file, 'utf8'));
-        } catch (error) {
-            console.log(`⚠️ 判官 ${paper.id} 的答卷读不到（${error.code || error.message}），本轮少一份`);
-            continue;
+    // 每个 set = 一份答案 + 六位判官。多个 set 合并统计。
+    const sets = [];
+    for (const spec of SETS) {
+        const key = JSON.parse(await readFile(path.resolve(repoRoot, spec.keyFile), 'utf8'));
+        const papers = [];
+        for (const suffix of SUFFIXES) {
+            const file = path.join(scratch, `${spec.dirPrefix}${suffix.id}`, 'verdicts.json');
+            try {
+                const verdicts = JSON.parse(await readFile(file, 'utf8'));
+                papers.push({
+                    ...suffix,
+                    label: `${spec.dirPrefix}${suffix.id}`,
+                    verdicts: new Map(verdicts.map(v => [v.n, String(v.verdict).toUpperCase()]))
+                });
+            } catch (error) {
+                console.log(`⚠️ 判官 ${spec.dirPrefix}${suffix.id} 的答卷读不到（${error.code || error.message}）`);
+            }
         }
-        papers.push({ ...paper, verdicts: new Map(verdicts.map(v => [v.n, String(v.verdict).toUpperCase()])), raw: verdicts });
+        sets.push({ ...spec, key, papers });
     }
+
+    const papers = sets.flatMap(set => set.papers);
+    const key = sets.flatMap(set => set.key);
 
     if (papers.length < 4) {
         console.log(`只收到 ${papers.length} 份答卷，不足以判——至少要 4 份（两种排布各 2 份）`);
@@ -100,10 +125,10 @@ async function main() {
     console.log(line);
     let controlCorrect = 0;
     let controlTotal = 0;
-    for (const paper of papers) {
+    for (const set of sets) for (const paper of set.papers) {
         let correct = 0;
         let total = 0;
-        for (const entry of key.filter(k => k.type === 'control')) {
+        for (const entry of set.key.filter(k => k.type === 'control')) {
             const verdict = paper.verdicts.get(entry.n);
             if (!verdict) continue;
             const result = resolveControl(verdict, paper.order, entry.intactFirst);
@@ -112,7 +137,7 @@ async function main() {
         }
         controlCorrect += correct;
         controlTotal += total;
-        console.log(`  判官 ${paper.id}（排布 ${paper.order}）：${correct}/${total}`);
+        console.log(`  判官 ${paper.label}（排布 ${paper.order}）：${correct}/${total}`);
     }
     const controlRate = controlTotal ? controlCorrect / controlTotal : 0;
     console.log(`  合计 ${controlCorrect}/${controlTotal} = ${(controlRate * 100).toFixed(0)}%`);
@@ -142,7 +167,7 @@ async function main() {
 
     /* ── 正题：对调一致的胜负 ── */
     console.log(`\n${line}`);
-    console.log('正题　15 道真题：改后 vs 改前');
+    console.log(`正题　${key.filter(k=>k.type==="real").length} 道真题：${ARM_B} vs ${ARM_A}`);
     console.log(line);
     console.log('题号  经                     排布1        排布2        对调一致?');
 
@@ -152,10 +177,10 @@ async function main() {
     let flipped = 0;
     const detail = [];
 
-    for (const entry of key.filter(k => k.type === 'real')) {
+    for (const set of sets) for (const entry of set.key.filter(k => k.type === 'real')) {
         const armsOrder1 = [];
         const armsOrder2 = [];
-        for (const paper of papers) {
+        for (const paper of set.papers) {
             const verdict = paper.verdicts.get(entry.n);
             if (!verdict) continue;
             const arm = resolveArm(verdict, paper.order, entry.firstIsNew);
@@ -175,17 +200,17 @@ async function main() {
             flipped += 1;
         }
 
-        const label = { new: '改后', old: '改前', tie: '平', flip: '✗ 翻脸' };
+        const label = { new: ARM_B, old: ARM_A, tie: '平', flip: '✗ 翻脸' };
         console.log(
             `${String(entry.n).padStart(3)}.  ${entry.title.padEnd(12)}  `
-            + `${label[m1].padEnd(10)}  ${label[m2].padEnd(10)}  ${m1 === m2 ? '✓' : '✗'}`
+            + `${label[m1].padEnd(12)}  ${label[m2].padEnd(12)}  ${m1 === m2 ? '✓' : '✗'}`
         );
         detail.push({ n: entry.n, title: entry.title, m1, m2, outcome });
     }
 
     console.log(line);
-    console.log(`对调一致的题：${newWins + oldWins + ties} / 15　（翻脸 ${flipped} 题，记为噪声不计胜负）`);
-    console.log(`  改后胜 ${newWins}　改前胜 ${oldWins}　分不出 ${ties}`);
+    console.log(`对调一致的题：${newWins + oldWins + ties} / ${key.filter(k=>k.type==="real").length}　（翻脸 ${flipped} 题，记为噪声不计胜负）`);
+    console.log(`  ${ARM_B}胜 ${newWins}　${ARM_A}胜 ${oldWins}　分不出 ${ties}`);
 
     const p = signTest(newWins, oldWins);
     console.log(`\n符号检验：${newWins} 胜 ${oldWins} 负，p = ${p.toFixed(3)}`);
@@ -200,11 +225,11 @@ async function main() {
         console.log('这本身也是个结果：两臂差别小到判官在对调后就守不住立场。');
     } else if (p < 0.05) {
         console.log(newWins > oldWins
-            ? `✅ 改后显著更好（p = ${p.toFixed(3)}）。`
-            : `❌ 改前显著更好（p = ${p.toFixed(3)}）——本轮改动是净负面，要逐条回看改坏了哪几处。`);
+            ? `✅ ${ARM_B} 显著更好（p = ${p.toFixed(3)}）。`
+            : `✅ ${ARM_A} 显著更好（p = ${p.toFixed(3)}）——被测的那一臂是净负面。`);
     } else {
         console.log(`⚖️ 分不出高下（p = ${p.toFixed(3)}，未达 0.05）。`);
-        console.log('   在这 15 段上，本轮改动没有产生判官能稳定察觉的质量差异。');
+        console.log('   在这批样本上，两臂没有产生判官能稳定察觉的质量差异。');
         console.log('   注意这**不等于**「改动无用」——它排除的是「有大幅提升」，');
         console.log('   小幅提升需要更大样本才量得出来。');
     }

@@ -1,0 +1,174 @@
+[
+ {
+  "n": 1,
+  "type": "real",
+  "id": 22,
+  "title": "雜阿含經",
+  "firstIsNew": true
+ },
+ {
+  "n": 2,
+  "type": "real",
+  "id": 28,
+  "title": "成唯識論",
+  "firstIsNew": true
+ },
+ {
+  "n": 3,
+  "type": "control",
+  "id": "C1",
+  "title": "雜阿含經",
+  "why": "砍掉末尾约三分之一",
+  "intactFirst": true
+ },
+ {
+  "n": 4,
+  "type": "real",
+  "id": 32,
+  "title": "成唯識論",
+  "firstIsNew": false
+ },
+ {
+  "n": 5,
+  "type": "real",
+  "id": 33,
+  "title": "成唯識論",
+  "firstIsNew": true
+ },
+ {
+  "n": 6,
+  "type": "real",
+  "id": 35,
+  "title": "阿毘達磨俱舍論",
+  "firstIsNew": true
+ },
+ {
+  "n": 7,
+  "type": "real",
+  "id": 36,
+  "title": "阿毘達磨俱舍論",
+  "firstIsNew": false
+ },
+ {
+  "n": 8,
+  "type": "real",
+  "id": 37,
+  "title": "成唯識論",
+  "firstIsNew": false
+ },
+ {
+  "n": 9,
+  "type": "real",
+  "id": 27,
+  "title": "阿毘達磨俱舍論",
+  "firstIsNew": true
+ },
+ {
+  "n": 10,
+  "type": "real",
+  "id": 29,
+  "title": "阿毘達磨俱舍論",
+  "firstIsNew": false
+ },
+ {
+  "n": 11,
+  "type": "control",
+  "id": "C3",
+  "title": "阿毘達磨俱舍論",
+  "why": "去掉否定，命题反转",
+  "intactFirst": true
+ },
+ {
+  "n": 12,
+  "type": "real",
+  "id": 25,
+  "title": "雜阿含經",
+  "firstIsNew": false
+ },
+ {
+  "n": 13,
+  "type": "real",
+  "id": 38,
+  "title": "成唯識論",
+  "firstIsNew": true
+ },
+ {
+  "n": 14,
+  "type": "real",
+  "id": 40,
+  "title": "阿毘達磨俱舍論",
+  "firstIsNew": true
+ },
+ {
+  "n": 15,
+  "type": "real",
+  "id": 26,
+  "title": "成唯識論",
+  "firstIsNew": false
+ },
+ {
+  "n": 16,
+  "type": "real",
+  "id": 30,
+  "title": "阿毘達磨俱舍論",
+  "firstIsNew": false
+ },
+ {
+  "n": 17,
+  "type": "real",
+  "id": 31,
+  "title": "成唯識論",
+  "firstIsNew": true
+ },
+ {
+  "n": 18,
+  "type": "real",
+  "id": 34,
+  "title": "阿毘達磨俱舍論",
+  "firstIsNew": false
+ },
+ {
+  "n": 19,
+  "type": "control",
+  "id": "C4",
+  "title": "阿毘達磨俱舍論",
+  "why": "砍掉末尾约三分之一",
+  "intactFirst": false
+ },
+ {
+  "n": 20,
+  "type": "real",
+  "id": 21,
+  "title": "雜阿含經",
+  "firstIsNew": true
+ },
+ {
+  "n": 21,
+  "type": "real",
+  "id": 39,
+  "title": "成唯識論",
+  "firstIsNew": false
+ },
+ {
+  "n": 22,
+  "type": "real",
+  "id": 23,
+  "title": "雜阿含經",
+  "firstIsNew": true
+ },
+ {
+  "n": 23,
+  "type": "real",
+  "id": 24,
+  "title": "雜阿含經",
+  "firstIsNew": false
+ },
+ {
+  "n": 24,
+  "type": "control",
+  "id": "C2",
+  "title": "雜阿含經",
+  "why": "数目改错",
+  "intactFirst": false
+ }
+]
