@@ -1,3 +1,5 @@
+
+
 <div align="center">
 
 # 慧译通 | Buddhist AI Translator
@@ -248,7 +250,7 @@ Buddhist-AI-Translator/
 │   ├── tokens.css      # Design tokens, light + dark. The only file allowed raw hex
 │   ├── base.css        # Reset, typography, form/button/icon/modal primitives
 │   └── components.css  # Feature blocks + responsive rules
-├── src/                # ES modules: translator, mitra client, style, lexicon, config, terms
+├── src/                # ES modules: translator, Mitra client, style, lexicon, config, languages, terms
 │   └── data/           # Generated lexicon index (CC BY 4.0, see docs/lexicon.md)
 ├── worker/             # Optional Cloudflare Worker proxy
 ├── scripts/            # Verification scripts + the lexicon build tool
