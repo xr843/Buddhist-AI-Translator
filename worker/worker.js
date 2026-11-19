@@ -24,6 +24,29 @@ const DEFAULT_ALLOWED_ORIGINS = [
 
 // 速率限制配置（基于 IP，每分钟最大请求数）
 const RATE_LIMIT_PER_MINUTE = 30;
+
+/*
+ * 全站每日总上限（按上游分桶，北京时间零点清零）。
+ *
+ * 为什么有了按 IP 限流还要这个：2026-11-18/19 有人在一天半里调了约 2,700 次，
+ * 大部分转发给了 MITRA，后半段 MITRA 已经在回错误码；同时 KV 每天 1,000 次
+ * 写入额度被用完，按 IP 限流整个失效（它是 fail-open）。按 IP 限流挡不住换 IP，
+ * 也挡不住配额耗尽——只有「全站一天最多花多少」才能给 DeepSeek 账单封顶。
+ * 平时真实用量是每天 2–16 次（Cloudflare 后台实测），这几个默认值正常用户碰不到。
+ *
+ * 计数放在 Durable Object 里：单实例串行执行，计数是准的；没有 KV 那种
+ * 每天 1,000 次写入的上限。可用 wrangler.toml 的 [vars] 覆盖。
+ */
+const DEFAULT_DAILY_LIMITS = {
+    deepseek: 200,
+    mitra: 300,
+    fojin: 500
+};
+const BUDGET_LABELS = {
+    deepseek: 'DeepSeek 翻译',
+    mitra: 'MITRA',
+    fojin: '写本对勘'
+};
 const DEEPSEEK_UPSTREAM_TIMEOUT_MS = 30000;
 const MAX_REQUEST_BODY_BYTES = 64 * 1024;
 
@@ -181,6 +204,9 @@ async function handleTranslate(request, env, origin) {
         );
     }
 
+    const overBudget = await enforceDailyBudget(env, origin, 'deepseek');
+    if (overBudget) return overBudget;
+
     const prompt = createTranslationPrompt(text, sourceLang, targetLang);
     const upstreamAbortController = new AbortController();
     const upstreamTimeout = setTimeout(() => {
@@ -335,6 +361,8 @@ async function handleMitraTranslate(request, env, origin) {
 
     const rateLimited = await enforceRateLimit(request, env, origin);
     if (rateLimited) return rateLimited;
+    const overBudget = await enforceDailyBudget(env, origin, 'mitra');
+    if (overBudget) return overBudget;
 
     try {
         const upstream = await fetchUpstream(MITRA_TRANSLATE_URL, payload, MITRA_UPSTREAM_TIMEOUT_MS);
@@ -389,6 +417,8 @@ async function handleMitraSearch(request, env, origin) {
 
     const rateLimited = await enforceRateLimit(request, env, origin);
     if (rateLimited) return rateLimited;
+    const overBudget = await enforceDailyBudget(env, origin, 'mitra');
+    if (overBudget) return overBudget;
 
     try {
         const upstream = await fetchUpstream(MITRA_SEARCH_URL, payload, DEEPSEEK_UPSTREAM_TIMEOUT_MS);
@@ -643,6 +673,8 @@ async function handleFojinWitnesses(request, env, origin) {
 
     const rateLimited = await enforceRateLimit(request, env, origin);
     if (rateLimited) return rateLimited;
+    const overBudget = await enforceDailyBudget(env, origin, 'fojin');
+    if (overBudget) return overBudget;
 
     try {
         const located = await callFojinTool('verify_quote', { quote: passage }, DEEPSEEK_UPSTREAM_TIMEOUT_MS);
@@ -694,5 +726,100 @@ async function handleFojinWitnesses(request, env, origin) {
         }, origin, env);
     } catch (error) {
         return jsonResponse({ error: `fojin 服务不可用: ${error.message}` }, origin, env, 502);
+    }
+}
+
+// --- 每日总上限 ---
+
+// 北京时间（UTC+8）的日期与距下一个零点的秒数。
+function beijingDay(nowMs = Date.now()) {
+    const shifted = new Date(nowMs + 8 * 3600 * 1000);
+    const day = shifted.toISOString().slice(0, 10);
+    const secondsIntoDay = shifted.getUTCHours() * 3600 + shifted.getUTCMinutes() * 60 + shifted.getUTCSeconds();
+    return { day, secondsUntilReset: Math.max(1, 86400 - secondsIntoDay) };
+}
+
+function dailyLimitFor(env, bucket) {
+    const raw = env?.[`DAILY_LIMIT_${bucket.toUpperCase()}`];
+    const parsed = Number.parseInt(raw, 10);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : DEFAULT_DAILY_LIMITS[bucket];
+}
+
+/*
+ * 返回 { allowed, used, limit }。未绑定 DAILY_BUDGET（自部署 / 单元测试）时放行。
+ * 计数器本身出错时：DeepSeek 拒绝（花的是钱，宁可当天不可用），其余放行
+ * （和按 IP 限流同一个取舍：计数器坏了不该把免费功能拖下水）。
+ */
+async function checkDailyBudget(env, bucket) {
+    if (!env?.DAILY_BUDGET) {
+        return { allowed: true, unmetered: true };
+    }
+    const limit = dailyLimitFor(env, bucket);
+    const { day, secondsUntilReset } = beijingDay();
+    try {
+        const stub = env.DAILY_BUDGET.get(env.DAILY_BUDGET.idFromName('global'));
+        const response = await stub.fetch('https://daily-budget/consume', {
+            method: 'POST',
+            body: JSON.stringify({ bucket, day, limit })
+        });
+        if (!response.ok) throw new Error(`budget ${response.status}`);
+        const result = await response.json();
+        return { allowed: result.allowed === true, used: result.used, limit, secondsUntilReset };
+    } catch {
+        return { allowed: bucket !== 'deepseek', degraded: true, limit, secondsUntilReset };
+    }
+}
+
+async function enforceDailyBudget(env, origin, bucket) {
+    const result = await checkDailyBudget(env, bucket);
+    if (result.allowed) return null;
+    if (result.degraded) {
+        return jsonResponse(
+            { error: `${BUDGET_LABELS[bucket]} 暂时不可用，请稍后再试` },
+            origin,
+            env,
+            503
+        );
+    }
+    return jsonResponse(
+        { error: `今日 ${BUDGET_LABELS[bucket]} 总额度已用完，北京时间明天零点恢复` },
+        origin,
+        env,
+        429,
+        { 'Retry-After': String(result.secondsUntilReset) }
+    );
+}
+
+export class DailyBudget {
+    constructor(ctx) {
+        this.ctx = ctx;
+    }
+
+    async fetch(request) {
+        let body;
+        try {
+            body = await request.json();
+        } catch {
+            return new Response('bad request', { status: 400 });
+        }
+        const { bucket, day, limit } = body || {};
+        if (typeof bucket !== 'string' || typeof day !== 'string' || !Number.isInteger(limit)) {
+            return new Response('bad request', { status: 400 });
+        }
+
+        const storage = this.ctx.storage;
+        // 换天时清掉旧计数，存储里永远只有当天的几个键。
+        if ((await storage.get('day')) !== day) {
+            await storage.deleteAll();
+            await storage.put('day', day);
+        }
+
+        const key = `count:${bucket}`;
+        const used = (await storage.get(key)) || 0;
+        if (used >= limit) {
+            return Response.json({ allowed: false, used, limit });
+        }
+        await storage.put(key, used + 1);
+        return Response.json({ allowed: true, used: used + 1, limit });
     }
 }

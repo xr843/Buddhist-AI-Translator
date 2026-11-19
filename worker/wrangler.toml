@@ -21,3 +21,25 @@ id = "901a9edc0b4b4a1fa87508fc0de55038"
 
 # API 密钥通过 Cloudflare Secret 设置（不要写在这里）：
 #   wrangler secret put DEEPSEEK_API_KEY
+
+# 全站每日总上限的计数器（见 worker.js 的 DEFAULT_DAILY_LIMITS）。
+# 用 SQLite 存储的 Durable Object，Workers 免费套餐可用；没有 KV 的每日写入上限。
+# 不绑这个则不设每日总上限（自部署个人测试可以不绑，公开部署必须绑）。
+[[durable_objects.bindings]]
+name = "DAILY_BUDGET"
+class_name = "DailyBudget"
+
+[[migrations]]
+tag = "v1-daily-budget"
+new_sqlite_classes = ["DailyBudget"]
+
+# 每日上限可在这里覆盖（单位：次/北京时间自然日）：
+# [vars]
+# DAILY_LIMIT_DEEPSEEK = "200"
+# DAILY_LIMIT_MITRA = "300"
+# DAILY_LIMIT_FOJIN = "500"
+
+# 请求日志：出事时能查来源 IP、路径、Origin。免费套餐每天 20 万条，远够用。
+[observability]
+enabled = true
+head_sampling_rate = 1
