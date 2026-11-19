@@ -194,5 +194,23 @@ connect-src 'self' ... http://127.0.0.1:8787;
 反而给了攻击者一个廉价的拒绝服务手段——1,000 次请求换全站当天下线。
 `tests/worker.test.mjs` 有两条测试钉着这个行为。
 
+**全站每日总上限（2026-11-19 起）**：按 IP 限流挡不住换 IP，也挡不住 KV 配额耗尽。
+2026-11-18/19 一天半被调了约 2,700 次（平时每天 2–16 次），KV 配额用完后限流整个失效。
+所以另加了一层按上游分桶的**每日总上限**，计数在 Durable Object `DailyBudget` 里，
+北京时间零点清零：
+
+| 上游 | 默认上限（次/天） | 计数器出错时 |
+|---|---|---|
+| DeepSeek（`/translate`） | 200 | **拒绝**（花的是钱） |
+| MITRA（`/mitra/*`） | 300 | 放行 |
+| fojin（`/fojin/witnesses`） | 500 | 放行 |
+
+超限回 429，`Retry-After` 指向下一个北京时间零点。上限可在 `wrangler.toml` 的 `[vars]`
+用 `DAILY_LIMIT_DEEPSEEK` / `DAILY_LIMIT_MITRA` / `DAILY_LIMIT_FOJIN` 覆盖。
+`tests/worker-daily-budget.test.mjs` 钉着这些行为（已做变异测试：去掉上限判断会红）。
+
+**请求日志已开**（`[observability]`）：出事时到 Cloudflare 后台 → Workers →
+`buddhist-translator-api` → Logs 查来源 IP、路径、Origin。
+
 **看真实用量**：Cloudflare 后台 → Workers → `buddhist-translator-api`。
 从外部量不到，只能在那里看。
